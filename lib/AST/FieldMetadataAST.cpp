@@ -5,7 +5,7 @@
 //  Created by Rafael Guerreiro on 2018-06-24.
 //
 
-#include "FieldMetadataAST.hpp"
+#include "warriorlang/FieldMetadataAST.hpp"
 
 namespace warriorlang {
     FieldMetadataAST::~FieldMetadataAST() {

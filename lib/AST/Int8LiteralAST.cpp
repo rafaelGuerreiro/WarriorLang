@@ -1,14 +1,14 @@
 //
-//  UInt16LiteralAST.cpp
+//  Int8LiteralAST.cpp
 //  WarriorLang
 //
 //  Created by Rafael Guerreiro on 2018-06-24.
 //
 
-#include "UInt16LiteralAST.hpp"
+#include "warriorlang/Int8LiteralAST.hpp"
 
 namespace warriorlang {
-    UInt16LiteralAST::~UInt16LiteralAST() {
+    Int8LiteralAST::~Int8LiteralAST() {
     }
 }
 

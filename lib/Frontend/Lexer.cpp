@@ -5,9 +5,9 @@
 //  Created by Rafael Guerreiro on 2018-06-25.
 //
 
-#include "Lexer.hpp"
+#include "warriorlang/warriorlang/Lexer.hpp"
 // #include "llvm/ADT/STLExtras.h"
-#include "WarLangToken.hpp"
+#include "warriorlang/warriorlang/WarLangToken.hpp"
 #include <iostream>
 #include <memory>
 #include <fstream>

@@ -5,7 +5,7 @@
 //  Created by Rafael Guerreiro on 2018-06-23.
 //
 
-#include "TypeMetadataAST.hpp"
+#include "warriorlang/TypeMetadataAST.hpp"
 
 namespace warriorlang {
     TypeMetadataAST::~TypeMetadataAST() {

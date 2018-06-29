@@ -5,7 +5,7 @@
 //  Created by Rafael Guerreiro on 2018-06-23.
 //
 
-#include "FunctionMetadataAST.hpp"
+#include "warriorlang/FunctionMetadataAST.hpp"
 
 namespace warriorlang {
     FunctionMetadataAST::~FunctionMetadataAST() { }

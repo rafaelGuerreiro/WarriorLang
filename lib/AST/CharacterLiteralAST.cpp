@@ -5,7 +5,7 @@
 //  Created by Rafael Guerreiro on 2018-06-24.
 //
 
-#include "CharacterLiteralAST.hpp"
+#include "warriorlang/CharacterLiteralAST.hpp"
 
 namespace warriorlang {
     CharacterLiteralAST::~CharacterLiteralAST() {

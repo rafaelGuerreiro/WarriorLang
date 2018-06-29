@@ -5,7 +5,7 @@
 //  Created by Rafael Guerreiro on 2018-06-24.
 //
 
-#include "UInt8LiteralAST.hpp"
+#include "warriorlang/UInt8LiteralAST.hpp"
 
 namespace warriorlang {
     UInt8LiteralAST::~UInt8LiteralAST() {

@@ -8,11 +8,9 @@
             "name": "Debug",
             "type": "lldb",
             "request": "attach",
-            "program": "${workspaceFolder}/build/warriorlang",
-            "args": [],
+            "program": "${workspaceFolder}/build/Debug/warriorlang",
             "stopOnEntry": true,
-            "cwd": "${workspaceFolder}",
-            "preLaunchTask": "Build"
+            "preLaunchTask": "Build debug"
           }
     ]
 }

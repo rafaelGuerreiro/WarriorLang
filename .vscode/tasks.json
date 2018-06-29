@@ -8,13 +8,29 @@
         "reveal": "always"
     },
     "options": {
-        "cwd": "${workspaceRoot}/build"
+        "cwd": "${workspaceRoot}"
     },
     "tasks": [
         {
-            "label": "Build",
+            "label": "Build release",
+			// "options": {
+			// 	"cwd": "${workspaceRoot}/build/Release"
+			// },
             "command": [
-                "cmake -G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=/usr/local/opt/llvm@6/ ..",
+                "mkdir -p build/Release &&",
+                "cd build/Release &&",
+                "rm -rf * &&",
+                "cmake -G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/usr/local/opt/llvm@6/ ../.. &&",
+                "cmake --build ."
+            ],
+            "group": "build"
+        },
+        {
+            "label": "Build debug",
+            "command": [
+                "mkdir -p build/Debug &&",
+                "cd build/Debug &&",
+                "cmake -G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Debug -DCMAKE_PREFIX_PATH=/usr/local/opt/llvm@6/ ../.. &&",
                 "cmake --build ."
             ],
             "group": {
@@ -23,8 +39,16 @@
             }
         },
         {
-            "label": "Run",
-            "command": "./warriorlang"
+            "label": "Run release",
+            "command": "${workspaceRoot}/build/Release/warriorlang",
+            "dependsOn": "Build release",
+            "group": "none"
+        },
+        {
+            "label": "Run debug",
+            "command": "${workspaceRoot}/build/Debug/warriorlang",
+            "dependsOn": "Build debug",
+            "group": "none"
         }
     ]
 }

@@ -5,7 +5,7 @@
 //  Created by Rafael Guerreiro on 2018-06-23.
 //
 
-#include "FunctionCallExpressionAST.hpp"
+#include "warriorlang/FunctionCallExpressionAST.hpp"
 
 namespace warriorlang {
     FunctionCallExpressionAST::~FunctionCallExpressionAST() {
