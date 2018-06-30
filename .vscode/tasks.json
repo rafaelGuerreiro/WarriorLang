@@ -40,13 +40,13 @@
         },
         {
             "label": "Run release",
-            "command": "${workspaceRoot}/build/Release/warriorlang",
+            "command": "${workspaceRoot}/build/Release/lib/warriorlang",
             "dependsOn": "Build release",
             "group": "none"
         },
         {
             "label": "Run debug",
-            "command": "${workspaceRoot}/build/Debug/warriorlang",
+            "command": "${workspaceRoot}/build/Debug/lib/warriorlang",
             "dependsOn": "Build debug",
             "group": "none"
         }

@@ -10,9 +10,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{CXXFLAGS}")
 add_compile_options("-v")
 
 include_directories(${LLVM_INCLUDE_DIRS} "${PROJECT_SOURCE_DIR}/include")
-
 add_definitions(${LLVM_DEFINITIONS})
-
 
 # Find the libraries that correspond to the LLVM components
 # that we wish to use

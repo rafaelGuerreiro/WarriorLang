@@ -1,10 +1,7 @@
 # Do not use file globing because then CMake is not able to tell whether a file
 # has been deleted or added when rebuilding the project.
-set(MAIN_SRC main.cpp)
-
-add_library(${PROJECT_NAME}_lib
-                "Frontend/Lexer.cpp"
-                "Frontend/WarLangToken.cpp"
+add_library("${PROJECT_NAME}_lib"
+                "Frontend/Tokenizer.cpp"
                 "AST/StringLiteralAST.cpp"
                 "AST/FunctionMetadataAST.cpp"
                 "AST/UInt16LiteralAST.cpp"
@@ -30,5 +27,5 @@ add_library(${PROJECT_NAME}_lib
                 "AST/UInt8LiteralAST.cpp"
                 "AST/ArgumentMetadataAST.cpp")
 
-add_executable(${PROJECT_NAME} ${MAIN_SRC})
-target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}_lib ${llvm_libs})
+add_executable(${PROJECT_NAME} "main.cpp")
+target_link_libraries(${PROJECT_NAME} "${PROJECT_NAME}_lib" ${llvm_libs})
