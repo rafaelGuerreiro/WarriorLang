@@ -5,7 +5,7 @@
 //  Created by Rafael Guerreiro on 2018-06-24.
 //
 
-#include "warriorlang/StringLiteralAST.hpp"
+#include "warriorlang/AST/StringLiteralAST.hpp"
 
 namespace warriorlang {
     StringLiteralAST::~StringLiteralAST() {

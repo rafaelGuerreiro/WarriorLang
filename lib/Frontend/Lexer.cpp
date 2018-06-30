@@ -5,9 +5,9 @@
 //  Created by Rafael Guerreiro on 2018-06-25.
 //
 
-#include "warriorlang/warriorlang/Lexer.hpp"
+#include "warriorlang/Frontend/Lexer.hpp"
 // #include "llvm/ADT/STLExtras.h"
-#include "warriorlang/warriorlang/WarLangToken.hpp"
+#include "warriorlang/Frontend/WarLangToken.hpp"
 #include <iostream>
 #include <memory>
 #include <fstream>
@@ -197,29 +197,29 @@ namespace warriorlang {
 
             if (currentChar == '/') {
                 // This could be a comment or an operator
-                this->tokens.push_back(createPossibleCommentToken(file, stream, identifier, line));
+                // this->tokens.push_back(createPossibleCommentToken(file, stream, identifier, line));
             } else if (isdigit(currentChar)) {
-                this->tokens.push_back(createNumberToken(file, stream, identifier, line));
+                // this->tokens.push_back(createNumberToken(file, stream, identifier, line));
             } else if (currentChar == '#') {
-                this->tokens.push_back(createSymbolToken(file, stream, identifier, line));
+                // this->tokens.push_back(createSymbolToken(file, stream, identifier, line));
             } else if (isalnum(currentChar) || currentChar == '_' || currentChar == '$') {
-                this->tokens.push_back(createSymbolToken(file, stream, identifier, line));
+                // this->tokens.push_back(createSymbolToken(file, stream, identifier, line));
             } else if (currentChar == '"') {
-                this->tokens.push_back(createStringToken(file, stream, identifier, line));
+                // this->tokens.push_back(createStringToken(file, stream, identifier, line));
             } else if (currentChar == '\'') {
-                this->tokens.push_back(createCharacterToken(file, stream, identifier, line));
+                // this->tokens.push_back(createCharacterToken(file, stream, identifier, line));
             } else if (currentChar == '(' || currentChar == ')') {
-                this->tokens.push_back(createToken(file, line, TOKEN_PARENTHESIS, identifier));
+                // this->tokens.push_back(createToken(file, line, TOKEN_PARENTHESIS, identifier));
             } else if (currentChar == '{' || currentChar == '}') {
-                this->tokens.push_back(createToken(file, line, TOKEN_CURLY_BRACES, identifier));
+                // this->tokens.push_back(createToken(file, line, TOKEN_CURLY_BRACES, identifier));
             } else if (currentChar == ':') {
-                this->tokens.push_back(createToken(file, line, TOKEN_COLON, identifier));
+                // this->tokens.push_back(createToken(file, line, TOKEN_COLON, identifier));
             } else if (currentChar == ';') {
-                this->tokens.push_back(createToken(file, line, TOKEN_SEMICOLON, identifier));
+                // this->tokens.push_back(createToken(file, line, TOKEN_SEMICOLON, identifier));
             } else if (currentChar == ',') {
-                this->tokens.push_back(createToken(file, line, TOKEN_COMMA, identifier));
+                // this->tokens.push_back(createToken(file, line, TOKEN_COMMA, identifier));
             } else {
-                this->tokens.push_back(createSymbolToken(file, stream, identifier, line));
+                // this->tokens.push_back(createSymbolToken(file, stream, identifier, line));
             }
         }
 

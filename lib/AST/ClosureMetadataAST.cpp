@@ -5,7 +5,7 @@
 //  Created by Rafael Guerreiro on 2018-06-24.
 //
 
-#include "warriorlang/ClosureMetadataAST.hpp"
+#include "warriorlang/AST/ClosureMetadataAST.hpp"
 
 namespace warriorlang {
     ClosureMetadataAST::~ClosureMetadataAST() { }

@@ -5,7 +5,7 @@
 //  Created by Rafael Guerreiro on 2018-06-23.
 //
 
-#include "warriorlang/ArgumentMetadataAST.hpp"
+#include "warriorlang/AST/ArgumentMetadataAST.hpp"
 
 namespace warriorlang {
     ArgumentMetadataAST::~ArgumentMetadataAST() {}

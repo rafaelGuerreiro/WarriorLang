@@ -17,7 +17,7 @@
 namespace warriorlang {
     class Lexer {
     private:
-        std::vector<std::unique_ptr<WarLangToken>> tokens;
+        // std::vector<std::unique_ptr<WarLangToken>> tokens;
 
         const std::unique_ptr<WarLangToken>& createToken(const std::string &file, unsigned int &line, TokenCategory category, const std::string &value);
         const std::unique_ptr<WarLangToken>& createPossibleCommentToken(const std::string &file, std::ifstream &stream, std::string &number, unsigned int &line);
@@ -29,8 +29,8 @@ namespace warriorlang {
         const std::unique_ptr<WarLangToken>& createSymbolToken(const std::string &file, std::ifstream &stream, std::string &carryOver, unsigned int &line, char currentChar = 0);
     public:
         ~Lexer();
-        Lexer(std::vector<std::unique_ptr<WarLangToken>> &tokens) {
-            this->tokens = std::move(tokens);
+        // Lexer(std::vector<std::unique_ptr<WarLangToken>> &tokens) {
+            // this->tokens = std::move(tokens);
 
 //            operators.push_back(".");
 //            operators.push_back("...");
@@ -70,7 +70,7 @@ namespace warriorlang {
 //            operators.push_back("|=");
 //            operators.push_back("~=");
 //            operators.push_back("^=");
-        }
+        // }
 
         void processFile(const std::string &file);
     };

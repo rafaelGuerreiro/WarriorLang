@@ -5,7 +5,7 @@
 //  Created by Rafael Guerreiro on 2018-06-23.
 //
 
-#include "warriorlang/UnaryExpressionAST.hpp"
+#include "warriorlang/AST/UnaryExpressionAST.hpp"
 
 namespace warriorlang {
     UnaryExpressionAST::~UnaryExpressionAST() {
