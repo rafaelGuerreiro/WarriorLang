@@ -8,20 +8,18 @@
         "reveal": "always"
     },
     "options": {
-        "cwd": "${workspaceRoot}/build"
+        "cwd": "${workspaceRoot}"
     },
     "tasks": [
         {
             "label": "Build release",
-			// "options": {
-			// 	"cwd": "${workspaceRoot}/build/Release"
-			// },
             "command": [
                 "mkdir -p build/Release &&",
                 "cd build/Release &&",
                 "rm -rf * &&",
                 "cmake -G 'Unix Makefiles'",
                     "-DCMAKE_BUILD_TYPE=Release",
+                    "-DCMAKE_VERBOSE_MAKEFILE=OFF",
                     "-DCMAKE_PREFIX_PATH=/usr/local/opt/llvm@6/",
                     "../.. &&",
                 "cmake --build ."
@@ -31,13 +29,13 @@
         {
             "label": "Build debug",
             "command": [
-                // "mkdir -p build/Debug &&",
-                // "cd build/Debug &&",
+                "mkdir -p build/Debug &&",
+                "cd build/Debug &&",
                 "cmake -G 'Unix Makefiles'",
                     "-DCMAKE_BUILD_TYPE=Debug",
-                    "-DWARRIORLANG_COMPILER_VERBOSE=ON",
+                    "-DCMAKE_VERBOSE_MAKEFILE=ON",
                     "-DCMAKE_PREFIX_PATH=/usr/local/opt/llvm@6/",
-                    ".. &&",
+                    "../.. &&",
                 "cmake --build ."
             ],
             "group": {
@@ -45,23 +43,6 @@
                 "isDefault": true
             }
         },
-        // {
-        //     "label": "Build debug",
-        //     "command": [
-        //         "mkdir -p build/Debug &&",
-        //         "cd build/Debug &&",
-        //         "cmake -G 'Unix Makefiles'",
-        //             "-DCMAKE_BUILD_TYPE=Debug",
-        //             "-DWARRIORLANG_COMPILER_VERBOSE=ON",
-        //             "-DCMAKE_PREFIX_PATH=/usr/local/opt/llvm@6/",
-        //             "../.. &&",
-        //         "cmake --build ."
-        //     ],
-        //     "group": {
-        //         "kind": "build",
-        //         "isDefault": true
-        //     }
-        // },
         {
             "label": "Build test",
             "command": [
@@ -70,28 +51,31 @@
                 "rm -rf * &&",
                 "cmake -G 'Unix Makefiles'",
                     "-DCMAKE_BUILD_TYPE=Debug",
-                    "-DWARRIORLANG_UNIT_TESTS=ON",
+                    "-DCMAKE_VERBOSE_MAKEFILE=OFF",
                     "-DCMAKE_PREFIX_PATH=/usr/local/opt/llvm@6/",
                     "../.. &&",
                 "cmake --build ."
             ],
-            "group": "build"
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
         },
         {
             "label": "Run release",
-            "command": "${workspaceRoot}/build/Release/lib/warriorlang",
+            "command": "${workspaceRoot}/build/Release/warriorlang",
             "dependsOn": "Build release",
             "group": "none"
         },
         {
             "label": "Run debug",
-            "command": "${workspaceRoot}/build/Debug/lib/warriorlang",
+            "command": "${workspaceRoot}/build/Debug/warriorlang",
             "dependsOn": "Build debug",
             "group": "none"
         },
         {
             "label": "Run test",
-            "command": "${workspaceRoot}/build/Test/unit_tests/warriorlang_unit_tests_runner",
+            "command": "${workspaceRoot}/build/Test/unittest/warriorlang_unittest",
             "dependsOn": "Build test",
             "group": "none"
         }

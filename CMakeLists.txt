@@ -18,7 +18,7 @@ find_package(Threads REQUIRED)
 
 find_package(LLVM REQUIRED CONFIG)
 
-if (CMAKE_VERBOSE_MAKEFILE)
+if (${CMAKE_VERBOSE_MAKEFILE})
     message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
     message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 endif()
@@ -26,7 +26,7 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{CXXFLAGS}")
 
 # Use -DCMAKE_VERBOSE_MAKEFILE=ON to make compiler verbose as well.
-if (CMAKE_VERBOSE_MAKEFILE)
+if (${CMAKE_VERBOSE_MAKEFILE})
     add_compile_options("-v")
 endif()
 
@@ -35,25 +35,28 @@ endif()
 llvm_map_components_to_libnames(llvm_libs support core irreader)
 
 # https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/RPATH-handling#always-full-rpath
-SET(CMAKE_SKIP_BUILD_RPATH FALSE)
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib" "${LLVM_LIB_PATH}")
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib" "${LLVM_LIB_PATH}")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 
 ##################
 # Custom variables
 ##################
-SET(WARRIORLANG_DEFAULT_COMPILE_FLAGS $ENV{CXXFLAGS})
-SET(WARRIORLANG_DEFAULT_LINK_FLAGS $ENV{LDFLAGS})
+set(WARRIORLANG_DEFAULT_COMPILE_FLAGS "$ENV{CXXFLAGS}")
+set(WARRIORLANG_DEFAULT_LINK_FLAGS "$ENV{LDFLAGS}")
 
-set(WARRIORLANG_DEFAULT_INCLUDE_DIRS ${LLVM_INCLUDE_DIRS} "${PROJECT_SOURCE_DIR}/include")
+set(WARRIORLANG_DEFAULT_INCLUDE_DIRS "${LLVM_INCLUDE_DIRS} ${PROJECT_SOURCE_DIR}/include")
 
-SET(WARRIORLANG_LIBRARIES_TARGET warriorlang_lib)
-SET(WARRIORLANG_EXECUTABLE_TARGET warriorlang)
-SET(WARRIORLANG_UNITTEST_TARGET warriorlang_unittest)
+set(WARRIORLANG_LIBRARIES_TARGET "warriorlang_lib")
+set(WARRIORLANG_EXECUTABLE_TARGET "warriorlang")
+set(WARRIORLANG_UNITTEST_TARGET "warriorlang_unittest")
 
-if (CMAKE_VERBOSE_MAKEFILE)
+message(STATUS "RUNTIME_OUTPUT_DIRECTORY: ${RUNTIME_OUTPUT_DIRECTORY}")
+message(STATUS "EXECUTABLE_OUTPUT_PATH: ${EXECUTABLE_OUTPUT_PATH}")
+
+if (${CMAKE_VERBOSE_MAKEFILE})
     message(STATUS "WARRIORLANG_DEFAULT_COMPILE_FLAGS: ${WARRIORLANG_DEFAULT_COMPILE_FLAGS}")
     message(STATUS "WARRIORLANG_DEFAULT_LINK_FLAGS: ${WARRIORLANG_DEFAULT_LINK_FLAGS}")
     message(STATUS "WARRIORLANG_DEFAULT_INCLUDE_DIRS: ${WARRIORLANG_DEFAULT_INCLUDE_DIRS}")
@@ -66,31 +69,31 @@ endif()
 # Build WARRIORLANG_LIBRARIES_TARGET
 ####################################
 add_library(${WARRIORLANG_LIBRARIES_TARGET}
-    "lib/Frontend/Tokenizer.cpp"
-    "lib/AST/StringLiteralAST.cpp"
-    "lib/AST/FunctionMetadataAST.cpp"
-    "lib/AST/UInt16LiteralAST.cpp"
-    "lib/AST/LocalVariableExpressionAST.cpp"
-    "lib/AST/BooleanLiteralAST.cpp"
-    "lib/AST/Int32LiteralAST.cpp"
-    "lib/AST/FunctionAST.cpp"
-    "lib/AST/BinaryExpressionAST.cpp"
-    "lib/AST/Int16LiteralAST.cpp"
-    "lib/AST/UInt32LiteralAST.cpp"
-    "lib/AST/Float64LiteralAST.cpp"
-    "lib/AST/Int64LiteralAST.cpp"
-    "lib/AST/CharacterLiteralAST.cpp"
-    "lib/AST/TypeMetadataAST.cpp"
-    "lib/AST/Int8LiteralAST.cpp"
-    "lib/AST/ClosureLiteralAST.cpp"
-    "lib/AST/UnaryExpressionAST.cpp"
-    "lib/AST/ClosureMetadataAST.cpp"
-    "lib/AST/FieldMetadataAST.cpp"
-    "lib/AST/Float32LiteralAST.cpp"
-    "lib/AST/FunctionCallExpressionAST.cpp"
-    "lib/AST/UInt64LiteralAST.cpp"
-    "lib/AST/UInt8LiteralAST.cpp"
-    "lib/AST/ArgumentMetadataAST.cpp")
+    "${CMAKE_SOURCE_DIR}/lib/Frontend/Tokenizer.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/StringLiteralAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/FunctionMetadataAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/UInt16LiteralAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/LocalVariableExpressionAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/BooleanLiteralAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/Int32LiteralAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/FunctionAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/BinaryExpressionAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/Int16LiteralAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/UInt32LiteralAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/Float64LiteralAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/Int64LiteralAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/CharacterLiteralAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/TypeMetadataAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/Int8LiteralAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/ClosureLiteralAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/UnaryExpressionAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/ClosureMetadataAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/FieldMetadataAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/Float32LiteralAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/FunctionCallExpressionAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/UInt64LiteralAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/UInt8LiteralAST.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/AST/ArgumentMetadataAST.cpp")
 
 #Add an alias so that library can be used inside the build tree, e.g. when testing
 add_library(warriorlang::${WARRIORLANG_LIBRARIES_TARGET} ALIAS ${WARRIORLANG_LIBRARIES_TARGET})
@@ -115,8 +118,6 @@ target_link_libraries(${WARRIORLANG_EXECUTABLE_TARGET} warriorlang::${WARRIORLAN
 set_target_properties(${PROJECT_NAME} PROPERTIES
     COMPILE_FLAGS ${WARRIORLANG_DEFAULT_COMPILE_FLAGS}
     LINK_FLAGS ${WARRIORLANG_DEFAULT_LINK_FLAGS})
-
-install(TARGETS ${WARRIORLANG_EXECUTABLE_TARGET} DESTINATION "bin")
 
 ###################################
 # Build WARRIORLANG_UNITTEST_TARGET
