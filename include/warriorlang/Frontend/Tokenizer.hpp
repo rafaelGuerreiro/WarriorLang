@@ -10,11 +10,12 @@
 
 #include <string>
 #include <vector>
-#include <memory>
+#include <fstream>
 
 namespace warriorlang {
     enum TokenCategory {
         TOKEN_EOF,
+        TOKEN_SPACE, // Used to separate tokens that don't necessarily correlate
 
         // Types
         TOKEN_DECLARATION_CLASS, // class
@@ -27,10 +28,12 @@ namespace warriorlang {
 
         TOKEN_DECLARATION_VAR, // var
         TOKEN_DECLARATION_LET, // let
+        TOKEN_DECLARATION_GET, // get
+        TOKEN_DECLARATION_SET, // set
         TOKEN_DECLARATION_FUNCTION, // function
 
         TOKEN_DECLARATION_INIT, // init           // Init methods can't read from self. Developers should use postconstruct methods.
-        TOKEN_DECLARATION_INIT_OPTIONAL, // init?          // Init method that can return null.
+        // TOKEN_DECLARATION_INIT_OPTIONAL, // init?          // Init method that can return null.
         TOKEN_DECLARATION_DEINIT, // deinit         // When this object is going to be removed from memory, this method is called.
         TOKEN_DECLARATION_POSTCONSTRUCT, // postconstruct  // A private method that is called after the complete initialization of the object. Child first.
 
@@ -66,16 +69,16 @@ namespace warriorlang {
         TOKEN_EXPRESSION_NEW, // new,            // new Class(argument: "test") -> syntax-sugar to Class.init(argument: "test");
         TOKEN_EXPRESSION_THROW, // throw,
         TOKEN_EXPRESSION_TRY, // try,
-        TOKEN_EXPRESSION_TRY_OPTIONAL, // try?,
+        // TOKEN_EXPRESSION_TRY_OPTIONAL, // try?,
         TOKEN_EXPRESSION_CATCH, // catch,
         TOKEN_EXPRESSION_FINALLY, // finally,        // Is garanteed to be invoked, even when errors happened. This block can't return, but it can throw.
         TOKEN_EXPRESSION_DEFER, // defer,          // Is garanteed to be invoked, even when errors happened. This block can't return, but it can throw.
         TOKEN_EXPRESSION_AS, // as,
-        TOKEN_EXPRESSION_AS_OPTIONAL, // as?,
+        // TOKEN_EXPRESSION_AS_OPTIONAL, // as?,
         TOKEN_EXPRESSION_IS, // is,             // same as instanceof in Java: return true if variable is String;
         TOKEN_EXPRESSION_AWAIT, // await,
         TOKEN_EXPRESSION_IF, // if, // if let, // if var,
-        TOKEN_EXPRESSION_ELSE_IF, // else if,
+        // TOKEN_EXPRESSION_ELSE_IF, // else if,
         TOKEN_EXPRESSION_ELSE, // else,
         TOKEN_EXPRESSION_UNLESS, // unless,
         TOKEN_EXPRESSION_GUARD, // guard, // guard let, // guard var,
@@ -186,13 +189,95 @@ namespace warriorlang {
         TOKEN_IDENTIFIER, // [a-zA-Z_$][a-zA-Z0-9_$]*
     };
 
+    enum TokenizerState {
+        TOKENIZER_STATE_START,
+
+
+        TokenizeStateSymbol,
+        TokenizeStateZero, // "0", which might lead to "0x"
+        TokenizeStateNumber, // "123", "0x123"
+        TokenizeStateNumberDot,
+        TokenizeStateFloatFraction, // "123.456", "0x123.456"
+        TokenizeStateFloatExponentUnsigned, // "123.456e", "123e", "0x123p"
+        TokenizeStateFloatExponentNumber, // "123.456e-", "123.456e5", "123.456e5e-5"
+        TokenizeStateString,
+        TokenizeStateStringEscape,
+        TokenizeStateCharLiteral,
+        TokenizeStateCharLiteralEnd,
+        TokenizeStateSawStar,
+        TokenizeStateSawSlash,
+        TokenizeStateSawBackslash,
+        TokenizeStateSawPercent,
+        TokenizeStateSawPlus,
+        TokenizeStateSawDash,
+        TokenizeStateSawAmpersand,
+        TokenizeStateSawXor,
+        TokenizeStateSawPipe,
+        TokenizeStateLineComment,
+        TokenizeStateLineString,
+        TokenizeStateLineStringEnd,
+        TokenizeStateLineStringContinue,
+        TokenizeStateLineStringContinueC,
+        TokenizeStateSawEq,
+        TokenizeStateSawBang,
+        TokenizeStateSawLessThan,
+        TokenizeStateSawLessThanLessThan,
+        TokenizeStateSawGreaterThan,
+        TokenizeStateSawGreaterThanGreaterThan,
+        TokenizeStateSawDot,
+        TokenizeStateSawAtSign,
+        TokenizeStateCharCode,
+        TokenizeStateError,
+        TokenizeStateLBracket,
+        TokenizeStateLBracketStar,
+    };
+
     struct Token {
         TokenCategory category;
         std::string value;
-        long int start_index;
-        long int end_index;
-        long int start_line;
-        long int start_column;
+        std::string file;
+        long int startIndex;
+        long int endIndex;
+        long int startLine;
+        long int startColumn;
+    };
+
+    struct Keyword {
+        std::string keyword;
+        TokenCategory category;
+    };
+
+    class Tokenizer {
+        private:
+            std::string file;
+            TokenizerState state;
+            char currentCharacter;
+            long int currentIndex;
+            long int currentLine;
+            long int currentColumn;
+
+            std::vector<Token>* tokens;
+            std::ifstream* inputFileStream;
+
+            long int tokenStartIndex;
+            long int tokenEndIndex;
+            long int tokenStartLine;
+            long int tokenStartColumn;
+            std::string currentSelection;
+
+            void tokenStart();
+            void appendToToken();
+            void tokenEnd(const TokenCategory &category);
+            bool tryToReadNextCharacter();
+            void appendSpaceTokenIfLastTokenWasNotSpaceAlready();
+            void appendEndOfFileToken();
+            const Token* peekToken();
+        public:
+            Tokenizer(const std::string &file);
+            ~Tokenizer();
+
+            void tokenize();
+            const std::vector<Token> getTokens();
     };
 }
 #endif /* Tokenizer_hpp */
