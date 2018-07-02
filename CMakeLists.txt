@@ -27,7 +27,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} $ENV{CXXFLAGS}")
 
 # Use -DCMAKE_VERBOSE_MAKEFILE=ON to make compiler verbose as well.
 if (${CMAKE_VERBOSE_MAKEFILE})
-    add_compile_options("-v")
+    add_compile_options(-v -g)
+    message(STATUS "Adding compile options: -v -g")
 endif()
 
 # Find the libraries that correspond to the LLVM components
@@ -69,6 +70,7 @@ endif()
 # Build WARRIORLANG_LIBRARIES_TARGET
 ####################################
 add_library(${WARRIORLANG_LIBRARIES_TARGET}
+    "${CMAKE_SOURCE_DIR}/lib/utils.cpp"
     "${CMAKE_SOURCE_DIR}/lib/Frontend/Tokenizer.cpp"
     "${CMAKE_SOURCE_DIR}/lib/AST/StringLiteralAST.cpp"
     "${CMAKE_SOURCE_DIR}/lib/AST/FunctionMetadataAST.cpp"

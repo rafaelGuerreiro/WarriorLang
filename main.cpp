@@ -6,6 +6,7 @@
 //
 
 #include "warriorlang/Frontend/Tokenizer.hpp"
+#include "warriorlang/utils.hpp"
 #include <iostream>
 
 using namespace warriorlang;
@@ -23,6 +24,6 @@ int main(int length, char** args) {
     Tokenizer* tokenizer = new Tokenizer("/Users/rguerreiro/workspace/llvm-workspace/warriorlang/temp/hello.warlang");
     tokenizer->tokenize();
 
-    delete tokenizer;
+    safelyDeletePointer(tokenizer);
     return 0;
 }

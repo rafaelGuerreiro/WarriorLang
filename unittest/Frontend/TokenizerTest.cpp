@@ -6,6 +6,7 @@
 //
 
 #include "warriorlang/Frontend/Tokenizer.hpp"
+#include "warriorlang/utils.hpp"
 #include "gtest/gtest.h"
 #include <iostream>
 
@@ -46,13 +47,13 @@ namespace warriorlang {
         tokenizer->tokenize();
 
         const std::vector<Token> tokens = tokenizer->getTokens();
-        for (int index = 0; index < tokens.size(); index++)
+        for (unsigned long int index = 0; index < tokens.size(); index++)
             std::cout << "TOKEN: " << tokens[index].category << '\n';
 
         unsigned long int expectedSize = 1;
         EXPECT_EQ(expectedSize, tokens.size());
 
-        delete tokenizer;
+        safelyDeletePointer(tokenizer);
     }
 
     // Tests that Foo does Xyz.
@@ -62,6 +63,8 @@ namespace warriorlang {
 }
 
 int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+    signal(SIGSEGV, warriorlang::exceptionHandler);
+
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

@@ -6,6 +6,7 @@
 //
 
 #include "warriorlang/Frontend/Tokenizer.hpp"
+#include "warriorlang/utils.hpp"
 #include <iostream>
 
 namespace warriorlang {
@@ -112,12 +113,12 @@ namespace warriorlang {
     Tokenizer::~Tokenizer() {
         if (this->tokens != nullptr) {
             this->tokens->clear();
-            delete this->tokens;
+            safelyDeletePointer(this->tokens);
         }
 
         if (this->inputFileStream != nullptr && this->inputFileStream->is_open()) {
             this->inputFileStream->close();
-            delete this->inputFileStream;
+            safelyDeletePointer(this->inputFileStream);
         }
     }
 
@@ -217,7 +218,10 @@ namespace warriorlang {
         }
 
         this->appendEndOfFileToken();
-        this->inputFileStream->close();
-        delete this->inputFileStream;
+        if (this->inputFileStream != nullptr &&
+            this->inputFileStream->is_open())
+            this->inputFileStream->close();
+
+        safelyDeletePointer(this->inputFileStream);
     }
 }
