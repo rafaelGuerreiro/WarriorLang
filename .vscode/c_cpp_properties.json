@@ -5,7 +5,9 @@
             "includePath": [
                 "${workspaceFolder}/include/**",
                 "${workspaceFolder}/lib/**",
-                "${workspaceFolder}/build/googletest-src/googletest/include"
+                "${workspaceFolder}/build/Debug/googletest-src/googletest/include",
+                "${workspaceFolder}/build/Test/googletest-src/googletest/include",
+                "${workspaceFolder}/build/Release/googletest-src/googletest/include"
             ],
             "defines": [],
             "macFrameworkPath": [

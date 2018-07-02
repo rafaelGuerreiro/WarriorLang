@@ -6,6 +6,7 @@
 //
 
 #include "warriorlang/Frontend/Tokenizer.hpp"
+#include <iostream>
 
 namespace warriorlang {
     static const std::vector<Keyword> keywords = std::vector<Keyword> {
@@ -152,7 +153,8 @@ namespace warriorlang {
 
     void Tokenizer::appendEndOfFileToken() {
         const Token* lastToken = peekToken();
-        if (lastToken->category == TOKEN_EOF) // Nothing can be added after an EOF.
+        if (lastToken != nullptr &&
+            lastToken->category == TOKEN_EOF) // Nothing can be added after an EOF.
             return;
 
         this->tokens->push_back(Token {
@@ -200,6 +202,7 @@ namespace warriorlang {
         this->inputFileStream->open(file, std::ifstream::in);
 
         for (; this->tryToReadNextCharacter(); this->currentIndex++) {
+            // std::cout << "FOUND CHAR: " << currentCharacter << '\n';
             switch (this->state) {
                 case TOKENIZER_STATE_START:
                     if (isspace(this->currentCharacter)) {
@@ -212,8 +215,9 @@ namespace warriorlang {
                     break;
             }
         }
-        
+
         this->appendEndOfFileToken();
         this->inputFileStream->close();
+        delete this->inputFileStream;
     }
 }

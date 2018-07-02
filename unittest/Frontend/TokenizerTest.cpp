@@ -7,6 +7,7 @@
 
 #include "warriorlang/Frontend/Tokenizer.hpp"
 #include "gtest/gtest.h"
+#include <iostream>
 
 namespace warriorlang {
     class TokenizerTest : public ::testing::Test {
@@ -30,29 +31,34 @@ namespace warriorlang {
         virtual void TearDown() {
             // Code here will be called immediately after each test (right
             // before the destructor).
+
+            // When done redirect cout to its old self
+            // std::string output = testing::internal::GetCapturedStdout();
         }
 
         // Objects declared here can be used by all tests in the test case for Foo.
-        };
+    };
 
-        // Tests that the Foo::Bar() method does Abc.
-        TEST_F(TokenizerTest, TokenizeHello) {
-            // const std::string input_filepath = ;
-            Tokenizer *tokenizer = new Tokenizer("tokenizer_warriorlang/hello.warlang");
-            tokenizer->tokenize();
+    // Tests that the Foo::Bar() method does Abc.
+    TEST_F(TokenizerTest, TokenizeHello) {
+        // const std::string input_filepath = ;
+        Tokenizer *tokenizer = new Tokenizer("/Users/rguerreiro/workspace/llvm-workspace/warriorlang/temp/hello.warlang");
+        tokenizer->tokenize();
 
-            const std::vector<Token> tokens = tokenizer->getTokens();
+        const std::vector<Token> tokens = tokenizer->getTokens();
+        for (int index = 0; index < tokens.size(); index++)
+            std::cout << "TOKEN: " << tokens[index].category << '\n';
 
-            unsigned long int expectedSize = 0;
-            EXPECT_EQ(expectedSize, tokens.size());
-        
-            delete tokenizer;
-        }
+        unsigned long int expectedSize = 1;
+        EXPECT_EQ(expectedSize, tokens.size());
 
-        // Tests that Foo does Xyz.
-        // TEST_F(TokenizerTest, DoesXyz) {
-        //     // Exercises the Xyz feature of Foo.
-        // }
+        delete tokenizer;
+    }
+
+    // Tests that Foo does Xyz.
+    // TEST_F(TokenizerTest, DoesXyz) {
+    //     // Exercises the Xyz feature of Foo.
+    // }
 }
 
 int main(int argc, char **argv) {

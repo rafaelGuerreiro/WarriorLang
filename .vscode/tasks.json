@@ -48,7 +48,7 @@
             "command": [
                 "mkdir -p build/Test &&",
                 "cd build/Test &&",
-                "rm -rf * &&",
+                // "rm -rf * &&",
                 "cmake -G 'Unix Makefiles'",
                     "-DCMAKE_BUILD_TYPE=Debug",
                     "-DCMAKE_VERBOSE_MAKEFILE=OFF",
