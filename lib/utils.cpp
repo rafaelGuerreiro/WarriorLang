@@ -62,4 +62,8 @@ namespace warriorlang {
         delete pointer;
         pointer = nullptr;
     }
+
+    bool stringContains(const std::string &str, const char &c) {
+        return str.find(c) == std::string::npos;
+    }
 }

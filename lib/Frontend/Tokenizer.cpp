@@ -134,6 +134,11 @@ namespace warriorlang {
         this->currentSelection = std::string(1, this->currentCharacter);
     }
 
+    void Tokenizer::tokenStart(const TokenizerState &state) {
+        this->tokenStart();
+        this->state = state;
+    }
+
     void Tokenizer::appendToToken() {
         this->tokenEndIndex = this->currentIndex + 1;
         this->currentSelection += this->currentCharacter;
@@ -150,6 +155,11 @@ namespace warriorlang {
             /* startLine: */    this->tokenStartLine,
             /* startColumn: */  this->tokenStartColumn
         });
+    }
+
+    void Tokenizer::appendSingleCharacterToken(const TokenCategory &category) {
+        this->tokenStart();
+        this->tokenEnd(category);
     }
 
     void Tokenizer::appendEndOfFileToken() {
@@ -199,20 +209,158 @@ namespace warriorlang {
         return &((*this->tokens)[this->tokens->size() - 1]);
     }
 
+    void Tokenizer::tokenizerStateStart(bool &readNextCharacter) {
+        readNextCharacter = true;
+        if (isspace(this->currentCharacter))
+            // this->appendSpaceTokenIfLastTokenWasNotSpaceAlready();
+            return;
+        else if (isdigit(this->currentCharacter))
+            this->tokenStart(TOKENIZER_STATE_NUMBER_LITERAL);
+        else if (isalpha(this->currentCharacter) ||
+                this->currentCharacter == '_' ||
+                this->currentCharacter == '$')
+            this->tokenStart(TOKENIZER_STATE_SYMBOL);
+        // else if (this->currentCharacter == '"')
+        //     this->tokenStart(TOKENIZER_STATE_STRING_LITERAL);
+        // else if (this->currentCharacter == '\'')
+        //     this->tokenStart(TOKENIZER_STATE_CHARACTER_LITERAL);
+        else if (this->currentCharacter == '/')
+            this->tokenStart(TOKENIZER_STATE_SLASH);
+        // else if (this->currentCharacter == '-')
+        //     this->tokenStart(TOKENIZER_STATE_DASH);
+        else if (this->currentCharacter == '#')
+            this->tokenStart(TOKENIZER_STATE_COMPILER_DIRECTIVE); // Could be a compiler directive
+
+        // else if (this->currentCharacter == '>')
+        //     this->appendSingleCharacterToken(TOKEN_PUNCTUATION_ARROW, // ->
+
+        // Single char tokens
+        else if (this->currentCharacter == '{')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_LEFT_CURLY_BRACE);
+        else if (this->currentCharacter == '}')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_RIGHT_CURLY_BRACE);
+        else if (this->currentCharacter == '(')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_LEFT_PARENTHESIS);
+        else if (this->currentCharacter == ')')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_RIGHT_PARENTHESIS);
+        else if (this->currentCharacter == '[')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_LEFT_SQUARE_BRACKETS);
+        else if (this->currentCharacter == ']')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_RIGHT_SQUARE_BRACKETS);
+        else if (this->currentCharacter == '<')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_LEFT_ANGLE_BRACKETS);
+        else if (this->currentCharacter == '>')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_RIGHT_ANGLE_BRACKETS);
+        else if (this->currentCharacter == '.')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_DOT);
+        else if (this->currentCharacter == ',')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_COMMA);
+        else if (this->currentCharacter == ':')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_COLON);
+        else if (this->currentCharacter == ';')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_SEMICOLON);
+        else if (this->currentCharacter == '+')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_PLUS);
+        else if (this->currentCharacter == '-')                         // This could also be the arrow operator
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_MINUS);
+        else if (this->currentCharacter == '*')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_ASTERISK);
+        else if (this->currentCharacter == '/')                         // This could also be a comment
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_SLASH);
+        else if (this->currentCharacter == '^')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_XOR);
+        else if (this->currentCharacter == '|')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_PIPE);
+        else if (this->currentCharacter == '%')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_PERCENT);
+        else if (this->currentCharacter == '~')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_TILDE);
+        else if (this->currentCharacter == '`')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_BACKTICK);
+        else if (this->currentCharacter == '=')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_EQUAL);
+        else if (this->currentCharacter == '@')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_AT);
+        else if (this->currentCharacter == '#')                         // This could also be a compiler directive
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_POUND);
+        else if (this->currentCharacter == '&')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_AMPERSAND);
+        else if (this->currentCharacter == '\\')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_BACKSLASH);
+        else if (this->currentCharacter == '!')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_EXCLAMATION);
+        else if (this->currentCharacter == '?')
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_QUESTION);
+    }
+
+    void Tokenizer::tokenizerStateSymbol(bool &readNextCharacter) {
+        // First char is alpha.
+        if (isalpha(this->currentCharacter) ||
+                isdigit(this->currentCharacter) ||
+                this->currentCharacter == '_' ||
+                this->currentCharacter == '$')
+            this->appendToToken();
+        else {
+            const TokenCategory* category = getKeywordCategory(this->currentSelection);
+
+            if (category == nullptr)
+                this->tokenEnd(TOKEN_IDENTIFIER);
+            else
+                this->tokenEnd(*category);
+            readNextCharacter = false;
+        }
+    }
+
+    void Tokenizer::tokenizerStateNumber(bool &readNextCharacter) {
+        // First char is a digit.
+        readNextCharacter = true;
+        if (isdigit(this->currentCharacter) ||
+                this->currentCharacter == '_')
+            this->appendToToken();
+        else if(this->currentSelection.size() == 1 &&
+                (this->currentCharacter == 'x' ||
+                this->currentCharacter == 'o' ||
+                this->currentCharacter == 'b'))
+            this->appendToToken();
+        else if (!stringContains(this->currentSelection, '.') &&
+               this->currentCharacter == '.')
+            this->appendToToken();
+        // else if(this->currentCharacter == 'e' ||
+        //         this->currentCharacter == 'p')
+        else {
+            TokenCategory category = stringContains(this->currentSelection, '.') ?
+                                        TOKEN_LITERAL_FLOAT :
+                                        TOKEN_LITERAL_INTEGER;
+
+            this->tokenEnd(category);
+            readNextCharacter = false;
+        }
+    }
+
     void Tokenizer::tokenize() {
         this->inputFileStream->open(file, std::ifstream::in);
 
-        for (; this->tryToReadNextCharacter(); this->currentIndex++) {
+        bool readNextCharacter = true;
+        for (this->currentIndex = 0; true; this->currentIndex++) {
             // std::cout << "FOUND CHAR: " << currentCharacter << '\n';
+
+            if (readNextCharacter) {
+                bool read = this->tryToReadNextCharacter();
+                if (!read) break;
+            }
+
             switch (this->state) {
                 case TOKENIZER_STATE_START:
-                    if (isspace(this->currentCharacter)) {
-                        this->appendSpaceTokenIfLastTokenWasNotSpaceAlready();
-                    } else if (isdigit(this->currentCharacter)) {
-                        this->tokenStart();
-                    }
+                    this->tokenizerStateStart(readNextCharacter);
+                    break;
+                case TOKENIZER_STATE_SYMBOL:
+                    this->tokenizerStateSymbol(readNextCharacter);
+                    break;
+                case TOKENIZER_STATE_NUMBER_LITERAL:
+                    this->tokenizerStateNumber(readNextCharacter);
                     break;
                 default:
+                    readNextCharacter = true;
                     break;
             }
         }

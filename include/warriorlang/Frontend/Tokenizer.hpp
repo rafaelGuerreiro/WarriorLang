@@ -191,45 +191,51 @@ namespace warriorlang {
 
     enum TokenizerState {
         TOKENIZER_STATE_START,
+        TOKENIZER_STATE_SYMBOL,
+        TOKENIZER_STATE_NUMBER_LITERAL,
+        TOKENIZER_STATE_COMPILER_DIRECTIVE,
+        TOKENIZER_STATE_DASH,
+        TOKENIZER_STATE_SLASH,
+        TOKENIZER_STATE_STRING_LITERAL,
+        TOKENIZER_STATE_CHARACTER_LITERAL,
 
-
-        TokenizeStateSymbol,
-        TokenizeStateZero, // "0", which might lead to "0x"
-        TokenizeStateNumber, // "123", "0x123"
-        TokenizeStateNumberDot,
-        TokenizeStateFloatFraction, // "123.456", "0x123.456"
-        TokenizeStateFloatExponentUnsigned, // "123.456e", "123e", "0x123p"
-        TokenizeStateFloatExponentNumber, // "123.456e-", "123.456e5", "123.456e5e-5"
-        TokenizeStateString,
-        TokenizeStateStringEscape,
-        TokenizeStateCharLiteral,
-        TokenizeStateCharLiteralEnd,
-        TokenizeStateSawStar,
-        TokenizeStateSawSlash,
-        TokenizeStateSawBackslash,
-        TokenizeStateSawPercent,
-        TokenizeStateSawPlus,
-        TokenizeStateSawDash,
-        TokenizeStateSawAmpersand,
-        TokenizeStateSawXor,
-        TokenizeStateSawPipe,
-        TokenizeStateLineComment,
-        TokenizeStateLineString,
-        TokenizeStateLineStringEnd,
-        TokenizeStateLineStringContinue,
-        TokenizeStateLineStringContinueC,
-        TokenizeStateSawEq,
-        TokenizeStateSawBang,
-        TokenizeStateSawLessThan,
-        TokenizeStateSawLessThanLessThan,
-        TokenizeStateSawGreaterThan,
-        TokenizeStateSawGreaterThanGreaterThan,
-        TokenizeStateSawDot,
-        TokenizeStateSawAtSign,
-        TokenizeStateCharCode,
-        TokenizeStateError,
-        TokenizeStateLBracket,
-        TokenizeStateLBracketStar,
+        // TokenizeStateSymbol,
+        // TokenizeStateZero, // "0", which might lead to "0x"
+        // TokenizeStateNumber, // "123", "0x123"
+        // TokenizeStateNumberDot,
+        // TokenizeStateFloatFraction, // "123.456", "0x123.456"
+        // TokenizeStateFloatExponentUnsigned, // "123.456e", "123e", "0x123p"
+        // TokenizeStateFloatExponentNumber, // "123.456e-", "123.456e5", "123.456e5e-5"
+        // TokenizeStateString,
+        // TokenizeStateStringEscape,
+        // TokenizeStateCharLiteral,
+        // TokenizeStateCharLiteralEnd,
+        // TokenizeStateSawStar,
+        // TokenizeStateSawSlash,
+        // TokenizeStateSawBackslash,
+        // TokenizeStateSawPercent,
+        // TokenizeStateSawPlus,
+        // TokenizeStateSawDash,
+        // TokenizeStateSawAmpersand,
+        // TokenizeStateSawXor,
+        // TokenizeStateSawPipe,
+        // TokenizeStateLineComment,
+        // TokenizeStateLineString,
+        // TokenizeStateLineStringEnd,
+        // TokenizeStateLineStringContinue,
+        // TokenizeStateLineStringContinueC,
+        // TokenizeStateSawEq,
+        // TokenizeStateSawBang,
+        // TokenizeStateSawLessThan,
+        // TokenizeStateSawLessThanLessThan,
+        // TokenizeStateSawGreaterThan,
+        // TokenizeStateSawGreaterThanGreaterThan,
+        // TokenizeStateSawDot,
+        // TokenizeStateSawAtSign,
+        // TokenizeStateCharCode,
+        // TokenizeStateError,
+        // TokenizeStateLBracket,
+        // TokenizeStateLBracketStar,
     };
 
     struct Token {
@@ -266,12 +272,20 @@ namespace warriorlang {
             std::string currentSelection;
 
             void tokenStart();
+            void tokenStart(const TokenizerState &state);
             void appendToToken();
             void tokenEnd(const TokenCategory &category);
+
+            void appendSingleCharacterToken(const TokenCategory &category);
+
             bool tryToReadNextCharacter();
             void appendSpaceTokenIfLastTokenWasNotSpaceAlready();
             void appendEndOfFileToken();
             const Token* peekToken();
+
+            void tokenizerStateStart(bool &readNextCharacter);
+            void tokenizerStateSymbol(bool &readNextCharacter);
+            void tokenizerStateNumber(bool &readNextCharacter);
         public:
             Tokenizer(const std::string &file);
             ~Tokenizer();

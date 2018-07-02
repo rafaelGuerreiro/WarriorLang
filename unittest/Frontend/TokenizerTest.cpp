@@ -47,8 +47,10 @@ namespace warriorlang {
         tokenizer->tokenize();
 
         const std::vector<Token> tokens = tokenizer->getTokens();
-        for (unsigned long int index = 0; index < tokens.size(); index++)
-            std::cout << "TOKEN: " << tokens[index].category << '\n';
+        for (unsigned long int index = 0; index < tokens.size(); index++) {
+            const Token token = tokens[index];
+            std::cout << "TOKEN: " << token.category << " -> '" << token.value << "'\n";
+        }
 
         unsigned long int expectedSize = 1;
         EXPECT_EQ(expectedSize, tokens.size());
