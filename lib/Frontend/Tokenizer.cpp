@@ -98,7 +98,7 @@ namespace warriorlang {
         this->state = TOKENIZER_STATE_START;
         this->currentCharacter = '\0';
         this->currentIndex = 0;
-        this->currentLine = 0;
+        this->currentLine = 1;
         this->currentColumn = 0;
 
         this->numericTokenMetadata = NumericTokenMetadata {
@@ -277,10 +277,10 @@ namespace warriorlang {
             this->tokenStartWithoutAddingCurrentCharacter(TOKENIZER_STATE_STRING_LITERAL);
         // else if (this->currentCharacter == '\'')
         //     this->tokenStart(TOKENIZER_STATE_CHARACTER_LITERAL);
-        // else if (this->currentCharacter == '/')
-        //     this->tokenStart(TOKENIZER_STATE_SLASH);
-        // else if (this->currentCharacter == '-')
-        //     this->tokenStart(TOKENIZER_STATE_DASH);
+        else if (this->currentCharacter == '/')
+            this->tokenStart(TOKENIZER_STATE_SLASH);
+        else if (this->currentCharacter == '-')
+            this->tokenStart(TOKENIZER_STATE_DASH);
         // else if (this->currentCharacter == '#')
         //     this->tokenStart(TOKENIZER_STATE_COMPILER_DIRECTIVE); // Could be a compiler directive
 
@@ -318,8 +318,6 @@ namespace warriorlang {
             this->appendSingleCharacterToken(TOKEN_PUNCTUATION_MINUS);
         else if (this->currentCharacter == '*')
             this->appendSingleCharacterToken(TOKEN_PUNCTUATION_ASTERISK);
-        else if (this->currentCharacter == '/')                         // This could also be a comment
-            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_SLASH);
         else if (this->currentCharacter == '^')
             this->appendSingleCharacterToken(TOKEN_PUNCTUATION_XOR);
         else if (this->currentCharacter == '|')
@@ -443,15 +441,35 @@ namespace warriorlang {
     }
 
     void Tokenizer::tokenizerStateCompilerDirective(bool &readNextCharacter) {
-
+        // First char is #
     }
 
     void Tokenizer::tokenizerStateDash(bool &readNextCharacter) {
-
+        // First char is -
+        readNextCharacter = true;
+        if (this->currentCharacter == '>') {
+            this->appendToToken();
+            this->tokenEnd(TOKEN_COMPOSED_PUNCTUATION_ARROW);
+        } else {
+            this->tokenEnd(TOKEN_PUNCTUATION_MINUS);
+            readNextCharacter = false;
+        }
     }
 
     void Tokenizer::tokenizerStateSlash(bool &readNextCharacter) {
-
+        // First char is /
+        // This could be an inline comment, a block comment or a slash.
+        readNextCharacter = true;
+        if (this->currentCharacter == '/') {
+            this->state = TOKENIZER_STATE_INLINE_COMMENT;
+            this->appendToToken();
+        } else if (this->currentCharacter == '*') {
+            this->state = TOKENIZER_STATE_BLOCK_COMMENT;
+            this->appendToToken();
+        } else {
+            this->tokenEnd(TOKEN_PUNCTUATION_SLASH);
+            readNextCharacter = false;
+        }
     }
 
     void Tokenizer::tokenizerStateStringLiteral(bool &readNextCharacter) {
@@ -500,6 +518,29 @@ namespace warriorlang {
 
     }
 
+    void Tokenizer::tokenizerStateInlineComment(bool &readNextCharacter) {
+        readNextCharacter = true;
+        if (this->currentCharacter == '\n') {
+            this->tokenEnd(TOKEN_COMMENT);
+            readNextCharacter = false;
+        } else {
+            this->appendToToken();
+        }
+    }
+
+    void Tokenizer::tokenizerStateBlockComment(bool &readNextCharacter) {
+        readNextCharacter = true;
+
+        unsigned long int length = this->currentSelection.size();
+        if (this->currentSelection[length - 2] == '*' &&
+                this->currentSelection[length - 1] == '/') {
+            this->tokenEnd(TOKEN_COMMENT);
+            readNextCharacter = false;
+        } else {
+            this->appendToToken();
+        }
+    }
+
     void Tokenizer::tokenize() {
         this->inputFileStream->open(file, std::ifstream::in);
 
@@ -511,6 +552,12 @@ namespace warriorlang {
                 bool read = this->tryToReadNextCharacter();
                 if (!read) break;
             }
+
+            if (this->currentCharacter == '\n') {
+                this->currentColumn = 0;
+                this->currentLine++;
+            } else
+                this->currentColumn++;
 
             switch (this->state) {
                 case TOKENIZER_STATE_START:
@@ -528,12 +575,18 @@ namespace warriorlang {
                 // case TOKENIZER_STATE_COMPILER_DIRECTIVE:
                 //     this->tokenizerStateCompilerDirective(readNextCharacter);
                 //     break;
-                // case TOKENIZER_STATE_DASH:
-                //     this->tokenizerStateDash(readNextCharacter);
-                //     break;
-                // case TOKENIZER_STATE_SLASH:
-                //     this->tokenizerStateSlash(readNextCharacter);
-                //     break;
+                case TOKENIZER_STATE_SLASH:
+                    this->tokenizerStateSlash(readNextCharacter);
+                    break;
+                case TOKENIZER_STATE_INLINE_COMMENT:
+                    this->tokenizerStateInlineComment(readNextCharacter);
+                    break;
+                case TOKENIZER_STATE_BLOCK_COMMENT:
+                    this->tokenizerStateBlockComment(readNextCharacter);
+                    break;
+                case TOKENIZER_STATE_DASH:
+                    this->tokenizerStateDash(readNextCharacter);
+                    break;
                 case TOKENIZER_STATE_STRING_LITERAL:
                     this->tokenizerStateStringLiteral(readNextCharacter);
                     break;

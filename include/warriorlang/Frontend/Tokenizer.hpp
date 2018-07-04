@@ -205,6 +205,9 @@ namespace warriorlang {
         TOKENIZER_STATE_STRING_LITERAL_ESCAPE,
         TOKENIZER_STATE_CHARACTER_LITERAL,
 
+        TOKENIZER_STATE_INLINE_COMMENT,
+        TOKENIZER_STATE_BLOCK_COMMENT
+
         // TokenizeStateSymbol,
         // TokenizeStateZero, // "0", which might lead to "0x"
         // TokenizeStateNumber, // "123", "0x123"
@@ -315,6 +318,8 @@ namespace warriorlang {
             void tokenizerStateStringLiteral(bool &readNextCharacter);
             void tokenizerStateStringLiteralEscape(bool &readNextCharacter);
             void tokenizerStateCharacterLiteral(bool &readNextCharacter);
+            void tokenizerStateInlineComment(bool &readNextCharacter);
+            void tokenizerStateBlockComment(bool &readNextCharacter);
         public:
             Tokenizer(const std::string &file);
             ~Tokenizer();
