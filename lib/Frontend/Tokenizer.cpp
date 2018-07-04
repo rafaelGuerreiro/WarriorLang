@@ -8,6 +8,7 @@
 #include "warriorlang/Frontend/Tokenizer.hpp"
 #include "warriorlang/utils.hpp"
 #include <iostream>
+#include <sstream>
 
 namespace warriorlang {
     static const std::vector<Keyword> keywords = std::vector<Keyword> {
@@ -100,6 +101,11 @@ namespace warriorlang {
         this->currentLine = 0;
         this->currentColumn = 0;
 
+        this->numericTokenMetadata = NumericTokenMetadata {
+            /* radix: */            0,
+            /* floatingPoint: */    false
+        };
+
         this->tokens = new std::vector<Token>();
         this->inputFileStream = new std::ifstream();
 
@@ -122,15 +128,23 @@ namespace warriorlang {
         }
     }
 
+    void Tokenizer::logError(const std::string &message) {
+        std::cout << this->file
+                  << ':'
+                  << this->currentLine
+                  << ':'
+                  << this->currentColumn
+                  << ": error: "
+                  << message
+                  << '\n';
+    }
+
     const std::vector<Token> Tokenizer::getTokens() {
         return *this->tokens;
     }
 
     void Tokenizer::tokenStart() {
-        this->tokenStartIndex = this->currentIndex;
-        this->tokenEndIndex = this->currentIndex + 1;
-        this->tokenStartLine = this->currentLine;
-        this->tokenStartColumn = this->currentColumn;
+        this->tokenStartWithoutAddingCurrentCharacter();
         this->currentSelection = std::string(1, this->currentCharacter);
     }
 
@@ -139,13 +153,39 @@ namespace warriorlang {
         this->state = state;
     }
 
-    void Tokenizer::appendToToken() {
+    void Tokenizer::tokenStartWithoutAddingCurrentCharacter() {
+        this->tokenStartIndex = this->currentIndex;
         this->tokenEndIndex = this->currentIndex + 1;
-        this->currentSelection += this->currentCharacter;
+        this->tokenStartLine = this->currentLine;
+        this->tokenStartColumn = this->currentColumn;
+        this->currentSelection = "";
+    }
+
+    void Tokenizer::tokenStartWithoutAddingCurrentCharacter(const TokenizerState &state) {
+        this->tokenStartWithoutAddingCurrentCharacter();
+        this->state = state;
+    }
+
+    void Tokenizer::appendToToken(const char &c) {
+        this->tokenEndIndex = this->currentIndex + 1;
+        this->currentSelection += c;
+    }
+
+    void Tokenizer::appendToToken() {
+        this->appendToToken(this->currentCharacter);
     }
 
     void Tokenizer::tokenEnd(const TokenCategory &category) {
         this->state = TOKENIZER_STATE_START;
+
+        int radix = this->numericTokenMetadata.radix;
+        bool floatingPoint = this->numericTokenMetadata.floatingPoint;
+
+        if (category != TOKEN_LITERAL_FLOAT && category != TOKEN_LITERAL_INTEGER) {
+            radix = 0;
+            floatingPoint = false;
+        }
+
         this->tokens->push_back(Token {
             /* category: */     category,
             /* value: */        this->currentSelection,
@@ -153,7 +193,11 @@ namespace warriorlang {
             /* startIndex: */   this->tokenStartIndex,
             /* endIndex: */     this->tokenEndIndex,
             /* startLine: */    this->tokenStartLine,
-            /* startColumn: */  this->tokenStartColumn
+            /* startColumn: */  this->tokenStartColumn,
+            {
+                /* radix: */        radix,
+                /* floatingPoint: */floatingPoint
+            }
         });
     }
 
@@ -175,7 +219,11 @@ namespace warriorlang {
             /* startIndex: */   this->currentIndex,
             /* endIndex: */     this->currentIndex + 1,
             /* startLine: */    this->currentLine,
-            /* startColumn: */  this->currentColumn
+            /* startColumn: */  this->currentColumn,
+            {
+                /* radix: */        0,
+                /* floatingPoint: */false
+            }
         });
     }
 
@@ -198,7 +246,11 @@ namespace warriorlang {
             /* startIndex: */   this->currentIndex,
             /* endIndex: */     this->currentIndex + 1,
             /* startLine: */    this->currentLine,
-            /* startColumn: */  this->currentColumn
+            /* startColumn: */  this->currentColumn,
+            {
+                /* radix: */        0,
+                /* floatingPoint: */false
+            }
         });
     }
 
@@ -212,24 +264,25 @@ namespace warriorlang {
     void Tokenizer::tokenizerStateStart(bool &readNextCharacter) {
         readNextCharacter = true;
         if (isspace(this->currentCharacter))
-            // this->appendSpaceTokenIfLastTokenWasNotSpaceAlready();
             return;
+        else if (this->currentCharacter == '0')
+            this->tokenStart(TOKENIZER_STATE_NUMBER_LITERAL_ZERO);
         else if (isdigit(this->currentCharacter))
             this->tokenStart(TOKENIZER_STATE_NUMBER_LITERAL);
         else if (isalpha(this->currentCharacter) ||
                 this->currentCharacter == '_' ||
                 this->currentCharacter == '$')
             this->tokenStart(TOKENIZER_STATE_SYMBOL);
-        // else if (this->currentCharacter == '"')
-        //     this->tokenStart(TOKENIZER_STATE_STRING_LITERAL);
+        else if (this->currentCharacter == '"')
+            this->tokenStartWithoutAddingCurrentCharacter(TOKENIZER_STATE_STRING_LITERAL);
         // else if (this->currentCharacter == '\'')
         //     this->tokenStart(TOKENIZER_STATE_CHARACTER_LITERAL);
-        else if (this->currentCharacter == '/')
-            this->tokenStart(TOKENIZER_STATE_SLASH);
+        // else if (this->currentCharacter == '/')
+        //     this->tokenStart(TOKENIZER_STATE_SLASH);
         // else if (this->currentCharacter == '-')
         //     this->tokenStart(TOKENIZER_STATE_DASH);
-        else if (this->currentCharacter == '#')
-            this->tokenStart(TOKENIZER_STATE_COMPILER_DIRECTIVE); // Could be a compiler directive
+        // else if (this->currentCharacter == '#')
+        //     this->tokenStart(TOKENIZER_STATE_COMPILER_DIRECTIVE); // Could be a compiler directive
 
         // else if (this->currentCharacter == '>')
         //     this->appendSingleCharacterToken(TOKEN_PUNCTUATION_ARROW, // ->
@@ -313,28 +366,138 @@ namespace warriorlang {
 
     void Tokenizer::tokenizerStateNumber(bool &readNextCharacter) {
         // First char is a digit.
+        if (this->numericTokenMetadata.radix == 0)
+            this->numericTokenMetadata.radix = 10;
+
         readNextCharacter = true;
-        if (isdigit(this->currentCharacter) ||
-                this->currentCharacter == '_')
+
+        if (this->currentCharacter == '_')
             this->appendToToken();
-        else if(this->currentSelection.size() == 1 &&
-                (this->currentCharacter == 'x' ||
-                this->currentCharacter == 'o' ||
-                this->currentCharacter == 'b'))
+        else if (!this->numericTokenMetadata.floatingPoint &&
+               this->currentCharacter == '.') {
+            this->numericTokenMetadata.floatingPoint = true;
             this->appendToToken();
-        else if (!stringContains(this->currentSelection, '.') &&
-               this->currentCharacter == '.')
+        }
+        else if (this->numericTokenMetadata.radix == 2 &&
+                this->currentCharacter >= '0' &&
+                this->currentCharacter <= '1')
             this->appendToToken();
-        // else if(this->currentCharacter == 'e' ||
-        //         this->currentCharacter == 'p')
+        else if (this->numericTokenMetadata.radix == 8 &&
+                this->currentCharacter >= '0' &&
+                this->currentCharacter <= '7')
+            this->appendToToken();
+        else if (this->numericTokenMetadata.radix == 10 &&
+                this->currentCharacter >= '0' &&
+                this->currentCharacter <= '9')
+            this->appendToToken();
+        else if (this->numericTokenMetadata.radix == 16 &&
+                (
+                    (this->currentCharacter >= '0' && this->currentCharacter <= '9') ||
+                    (this->currentCharacter >= 'a' && this->currentCharacter <= 'f') ||
+                    (this->currentCharacter >= 'A' && this->currentCharacter <= 'F')
+                ))
+            this->appendToToken();
         else {
-            TokenCategory category = stringContains(this->currentSelection, '.') ?
+            TokenCategory category = this->numericTokenMetadata.floatingPoint ?
                                         TOKEN_LITERAL_FLOAT :
                                         TOKEN_LITERAL_INTEGER;
 
             this->tokenEnd(category);
             readNextCharacter = false;
+
+            this->numericTokenMetadata.radix = 0;
+            this->numericTokenMetadata.floatingPoint = false;
         }
+    }
+
+    void Tokenizer::tokenizerStateZero(bool &readNextCharacter) {
+        // First char is 0.
+        readNextCharacter = true;
+        this->state = TOKENIZER_STATE_NUMBER_LITERAL;
+
+        if(this->currentCharacter == 'x') {
+            this->numericTokenMetadata.radix = 16;
+            this->appendToToken();
+        } else if (this->currentCharacter == 'o') {
+            this->numericTokenMetadata.radix = 8;
+            this->appendToToken();
+        } else if (this->currentCharacter == 'b') {
+            this->numericTokenMetadata.radix = 2;
+            this->appendToToken();
+        } else if (!this->numericTokenMetadata.floatingPoint &&
+                this->currentCharacter == '.') {
+            this->numericTokenMetadata.floatingPoint = true;
+            this->appendToToken();
+        } else if (this->currentCharacter == '_' ||
+                isdigit(this->currentCharacter)) {
+            this->appendToToken();
+        } else {
+            this->numericTokenMetadata.radix = 10;
+            this->numericTokenMetadata.floatingPoint = false;
+            this->tokenEnd(TOKEN_LITERAL_INTEGER);
+            readNextCharacter = false;
+
+            this->numericTokenMetadata.radix = 0;
+            this->numericTokenMetadata.floatingPoint = false;
+        }
+    }
+
+    void Tokenizer::tokenizerStateCompilerDirective(bool &readNextCharacter) {
+
+    }
+
+    void Tokenizer::tokenizerStateDash(bool &readNextCharacter) {
+
+    }
+
+    void Tokenizer::tokenizerStateSlash(bool &readNextCharacter) {
+
+    }
+
+    void Tokenizer::tokenizerStateStringLiteral(bool &readNextCharacter) {
+        readNextCharacter = true;
+        if (this->currentCharacter == '\\') {
+            this->state = TOKENIZER_STATE_STRING_LITERAL_ESCAPE;
+        } else if (this->currentCharacter == '"') {
+            this->tokenEnd(TOKEN_LITERAL_STRING);
+        } else {
+            this->appendToToken();
+        }
+    }
+
+    void Tokenizer::tokenizerStateStringLiteralEscape(bool &readNextCharacter) {
+        // Previous character was a \.
+
+        readNextCharacter = true;
+        this->state = TOKENIZER_STATE_STRING_LITERAL;
+        if (this->currentCharacter == 'n')
+            this->appendToToken('\n');
+        else if (this->currentCharacter == '"')
+            this->appendToToken('"');
+        else if (this->currentCharacter == '\'')
+            this->appendToToken('\'');
+        else if (this->currentCharacter == 't')
+            this->appendToToken('\t');
+        else if (this->currentCharacter == 'r')
+            this->appendToToken('\r');
+        else if (this->currentCharacter == 'f')
+            this->appendToToken('\f');
+        else if (this->currentCharacter == '\\')
+            this->appendToToken('\\');
+        else if (this->currentCharacter == '\b')
+            this->appendToToken('\b');
+        else {
+            // TODO diagnose, this is an error.
+            std::stringstream ss;
+            ss << "Unkown escaping character: '\\"
+               << this->currentCharacter
+               << '\'';
+            logError(ss.str());
+        }
+    }
+
+    void Tokenizer::tokenizerStateCharacterLiteral(bool &readNextCharacter) {
+
     }
 
     void Tokenizer::tokenize() {
@@ -356,9 +519,30 @@ namespace warriorlang {
                 case TOKENIZER_STATE_SYMBOL:
                     this->tokenizerStateSymbol(readNextCharacter);
                     break;
+                case TOKENIZER_STATE_NUMBER_LITERAL_ZERO:
+                    this->tokenizerStateZero(readNextCharacter);
+                    break;
                 case TOKENIZER_STATE_NUMBER_LITERAL:
                     this->tokenizerStateNumber(readNextCharacter);
                     break;
+                // case TOKENIZER_STATE_COMPILER_DIRECTIVE:
+                //     this->tokenizerStateCompilerDirective(readNextCharacter);
+                //     break;
+                // case TOKENIZER_STATE_DASH:
+                //     this->tokenizerStateDash(readNextCharacter);
+                //     break;
+                // case TOKENIZER_STATE_SLASH:
+                //     this->tokenizerStateSlash(readNextCharacter);
+                //     break;
+                case TOKENIZER_STATE_STRING_LITERAL:
+                    this->tokenizerStateStringLiteral(readNextCharacter);
+                    break;
+                case TOKENIZER_STATE_STRING_LITERAL_ESCAPE:
+                    this->tokenizerStateStringLiteralEscape(readNextCharacter);
+                    break;
+                // case TOKENIZER_STATE_CHARACTER_LITERAL:
+                //     this->tokenizerStateCharacterLiteral(readNextCharacter);
+                //     break;
                 default:
                     readNextCharacter = true;
                     break;

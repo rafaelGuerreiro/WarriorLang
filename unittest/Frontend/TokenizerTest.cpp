@@ -49,7 +49,12 @@ namespace warriorlang {
         const std::vector<Token> tokens = tokenizer->getTokens();
         for (unsigned long int index = 0; index < tokens.size(); index++) {
             const Token token = tokens[index];
-            std::cout << "TOKEN: " << token.category << " -> '" << token.value << "'\n";
+            std::cout << "TOKEN: " << token.category << " -> '" << token.value;
+
+            if (token.category == TOKEN_LITERAL_INTEGER || token.category == TOKEN_LITERAL_FLOAT)
+                std::cout << "\t\tradix: " << token.numericTokenMetadata.radix << " floating point? '" << token.numericTokenMetadata.floatingPoint;
+
+            std::cout << "'\n";
         }
 
         unsigned long int expectedSize = 1;

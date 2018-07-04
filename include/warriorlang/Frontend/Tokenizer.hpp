@@ -134,6 +134,7 @@ namespace warriorlang {
              "regular string, value: ${1 + 2 / 4 * 7}"
          */
         TOKEN_LITERAL_STRING,
+
         /*
           Characters are single quoted and single value.
 
@@ -156,6 +157,10 @@ namespace warriorlang {
         TOKEN_COMMENT, // Inline comment
 
         TOKEN_UNDERSCORE, // _      Used to ignore variables.
+
+        TOKEN_COMPOSED_PUNCTUATION_ARROW, // ->
+        TOKEN_COMPOSED_PUNCTUATION_INTERPOLATION_START, // ${
+        TOKEN_COMPOSED_PUNCTUATION_INTERPOLATION_END, // }
 
         TOKEN_PUNCTUATION_LEFT_PARENTHESIS, // (
         TOKEN_PUNCTUATION_RIGHT_PARENTHESIS, // )
@@ -182,7 +187,6 @@ namespace warriorlang {
         TOKEN_PUNCTUATION_AT, // @
         TOKEN_PUNCTUATION_POUND, // #
         TOKEN_PUNCTUATION_AMPERSAND, // &
-        TOKEN_PUNCTUATION_ARROW, // ->
         TOKEN_PUNCTUATION_BACKSLASH, // "\"
         TOKEN_PUNCTUATION_EXCLAMATION, // !
         TOKEN_PUNCTUATION_QUESTION, // ?
@@ -193,10 +197,12 @@ namespace warriorlang {
         TOKENIZER_STATE_START,
         TOKENIZER_STATE_SYMBOL,
         TOKENIZER_STATE_NUMBER_LITERAL,
+        TOKENIZER_STATE_NUMBER_LITERAL_ZERO,
         TOKENIZER_STATE_COMPILER_DIRECTIVE,
         TOKENIZER_STATE_DASH,
         TOKENIZER_STATE_SLASH,
         TOKENIZER_STATE_STRING_LITERAL,
+        TOKENIZER_STATE_STRING_LITERAL_ESCAPE,
         TOKENIZER_STATE_CHARACTER_LITERAL,
 
         // TokenizeStateSymbol,
@@ -238,6 +244,11 @@ namespace warriorlang {
         // TokenizeStateLBracketStar,
     };
 
+    struct NumericTokenMetadata {
+        int radix; // 2, 8, 10, 16
+        bool floatingPoint; // [digit]\.[digit]
+    };
+
     struct Token {
         TokenCategory category;
         std::string value;
@@ -246,6 +257,10 @@ namespace warriorlang {
         long int endIndex;
         long int startLine;
         long int startColumn;
+
+        union {
+            NumericTokenMetadata numericTokenMetadata;
+        };
     };
 
     struct Keyword {
@@ -271,8 +286,15 @@ namespace warriorlang {
             long int tokenStartColumn;
             std::string currentSelection;
 
+            NumericTokenMetadata numericTokenMetadata;
+
+            void logError(const std::string &message);
+
             void tokenStart();
             void tokenStart(const TokenizerState &state);
+            void tokenStartWithoutAddingCurrentCharacter();
+            void tokenStartWithoutAddingCurrentCharacter(const TokenizerState &state);
+            void appendToToken(const char &c);
             void appendToToken();
             void tokenEnd(const TokenCategory &category);
 
@@ -285,7 +307,14 @@ namespace warriorlang {
 
             void tokenizerStateStart(bool &readNextCharacter);
             void tokenizerStateSymbol(bool &readNextCharacter);
+            void tokenizerStateZero(bool &readNextCharacter);
             void tokenizerStateNumber(bool &readNextCharacter);
+            void tokenizerStateCompilerDirective(bool &readNextCharacter);
+            void tokenizerStateDash(bool &readNextCharacter);
+            void tokenizerStateSlash(bool &readNextCharacter);
+            void tokenizerStateStringLiteral(bool &readNextCharacter);
+            void tokenizerStateStringLiteralEscape(bool &readNextCharacter);
+            void tokenizerStateCharacterLiteral(bool &readNextCharacter);
         public:
             Tokenizer(const std::string &file);
             ~Tokenizer();
