@@ -206,6 +206,7 @@ namespace warriorlang {
         TOKENIZER_STATE_SYMBOL,
         TOKENIZER_STATE_NUMBER_LITERAL,
         TOKENIZER_STATE_NUMBER_LITERAL_ZERO,
+        TOKENIZER_STATE_NUMBER_LITERAL_EXPONENTIAL,
         TOKENIZER_STATE_COMPILER_DIRECTIVE,
         TOKENIZER_STATE_DASH,
         TOKENIZER_STATE_SLASH,
@@ -320,6 +321,7 @@ namespace warriorlang {
             void lexerStateZero(bool &readNextCharacter);
             void lexerEndNumberToken(bool &readNextCharacter);
             void lexerStateNumber(bool &readNextCharacter);
+            void lexerStateNumberExponential(bool &readNextCharacter);
             void lexerStateCompilerDirective(bool &readNextCharacter);
             void lexerStateDash(bool &readNextCharacter);
             void lexerStateSlash(bool &readNextCharacter);

@@ -125,6 +125,32 @@ namespace warriorlang {
                 (c >= 'A' && c <= 'F');
     }
 
+    static bool isValidDigit(const int &radix, const char &c) {
+        if (radix == 2)
+            return isBinaryDigit(c);
+
+        if (radix == 8)
+            return isOctalDigit(c);
+
+        if (radix == 10)
+            return isdigit(c);
+
+        if (radix == 16)
+            return isHexdecimalDigit(c);
+
+        return false;
+    }
+
+    static bool isExponentialIdentifier(const int &radix, const char &c) {
+        if (radix == 10)
+            return c == 'e' || c == 'E';
+
+        if (radix == 16)
+            return c == 'p' || c == 'P';
+
+        return false;
+    }
+
     Lexer::Lexer(const std::string &file) {
         this->file = file;
         this->state = TOKENIZER_STATE_START;
@@ -416,15 +442,26 @@ namespace warriorlang {
                 readNextCharacter = false;
             }
         }
-        else if (this->numberRadix == 2 && isBinaryDigit(this->currentCharacter))
+        else if (isValidDigit(this->numberRadix, this->currentCharacter))
             this->appendToToken();
-        else if (this->numberRadix == 8 && isOctalDigit(this->currentCharacter))
+        else if (isExponentialIdentifier(this->numberRadix, this->currentCharacter)) {
             this->appendToToken();
-        else if (this->numberRadix == 10 && isdigit(this->currentCharacter))
+            this->numberFloatingPoint = true;
+            this->state = TOKENIZER_STATE_NUMBER_LITERAL_EXPONENTIAL;
+        } else {
+            this->lexerEndNumberToken(readNextCharacter);
+        }
+    }
+
+    void Lexer::lexerStateNumberExponential(bool &readNextCharacter) {
+        // last digit was e or p.
+        readNextCharacter = true;
+        if (isValidDigit(this->numberRadix, this->currentCharacter) ||
+                this->currentCharacter == '+' ||
+                this->currentCharacter == '-') {
             this->appendToToken();
-        else if (this->numberRadix == 16 && isHexdecimalDigit(this->currentCharacter))
-            this->appendToToken();
-        else {
+            this->state = TOKENIZER_STATE_NUMBER_LITERAL;
+        } else {
             this->lexerEndNumberToken(readNextCharacter);
         }
     }
@@ -632,6 +669,9 @@ namespace warriorlang {
                     break;
                 case TOKENIZER_STATE_NUMBER_LITERAL:
                     this->lexerStateNumber(readNextCharacter);
+                    break;
+                case TOKENIZER_STATE_NUMBER_LITERAL_EXPONENTIAL:
+                    this->lexerStateNumberExponential(readNextCharacter);
                     break;
                 case TOKENIZER_STATE_COMPILER_DIRECTIVE:
                     this->lexerStateCompilerDirective(readNextCharacter);
