@@ -1,23 +1,23 @@
 //
-//  Tokenizer.hpp
+//  Lexer.hpp
 //  WarriorLang
 //
 //  Created by Rafael Guerreiro on 2018-06-29.
 //
 
-#include "warriorlang/Frontend/Tokenizer.hpp"
+#include "warriorlang/Parser/Lexer.hpp"
 #include "warriorlang/utils.hpp"
 #include "gtest/gtest.h"
 #include <iostream>
 
 namespace warriorlang {
-    class TokenizerTest : public ::testing::Test {
+    class LexerTest : public ::testing::Test {
     protected:
-        TokenizerTest() {
+        LexerTest() {
             // You can do set-up work for each test here.
         }
 
-        virtual ~TokenizerTest() {
+        virtual ~LexerTest() {
             // You can do clean-up work that doesn't throw exceptions here.
         }
 
@@ -41,30 +41,33 @@ namespace warriorlang {
     };
 
     // Tests that the Foo::Bar() method does Abc.
-    TEST_F(TokenizerTest, TokenizeHello) {
+    TEST_F(LexerTest, LexerHello) {
         // const std::string input_filepath = ;
-        Tokenizer *tokenizer = new Tokenizer("/Users/rguerreiro/workspace/llvm-workspace/warriorlang/temp/hello.warlang");
-        tokenizer->tokenize();
+        Lexer *lexer = new Lexer("/Users/rguerreiro/workspace/llvm-workspace/warriorlang/temp/hello.warlang");
+        lexer->parse();
 
-        const std::vector<Token> tokens = tokenizer->getTokens();
+        const std::vector<Token> tokens = lexer->getTokens();
         for (unsigned long int index = 0; index < tokens.size(); index++) {
             const Token token = tokens[index];
-            std::cout << "TOKEN: " << token.category << " -> '" << token.value;
+            std::cout << "TOKEN: " << token.category << " -> '" << token.value << '\'';
 
             if (token.category == TOKEN_LITERAL_INTEGER || token.category == TOKEN_LITERAL_FLOAT)
-                std::cout << "\t\tradix: " << token.numericTokenMetadata.radix << " floating point? '" << token.numericTokenMetadata.floatingPoint;
+                std::cout << "\t\tradix: " << token.numberRadix << " floating point? " << token.numberFloatingPoint;
 
-            std::cout << "'\n";
+            if (token.category == TOKEN_LITERAL_STRING)
+                std::cout << "\t\tInterpolation: " << token.stringHasInterpolation;
+
+            std::cout << '\n';
         }
 
         unsigned long int expectedSize = 1;
         EXPECT_EQ(expectedSize, tokens.size());
 
-        safelyDeletePointer(tokenizer);
+        safelyDeletePointer(lexer);
     }
 
     // Tests that Foo does Xyz.
-    // TEST_F(TokenizerTest, DoesXyz) {
+    // TEST_F(LexerTest, DoesXyz) {
     //     // Exercises the Xyz feature of Foo.
     // }
 }

@@ -5,7 +5,7 @@
 //  Created by Rafael Guerreiro on 2018-06-29.
 //
 
-#include "warriorlang/Frontend/Tokenizer.hpp"
+#include "warriorlang/Parser/Lexer.hpp"
 #include "warriorlang/utils.hpp"
 #include <iostream>
 
@@ -21,9 +21,9 @@ int main(int length, char** args) {
     // }
 
     // std::string file = std::string(args[0]);
-    Tokenizer* tokenizer = new Tokenizer("/Users/rguerreiro/workspace/llvm-workspace/warriorlang/temp/hello.warlang");
-    tokenizer->tokenize();
+    Lexer* lexer = new Lexer("/Users/rguerreiro/workspace/llvm-workspace/warriorlang/temp/hello.warlang");
+    lexer->parse();
 
-    safelyDeletePointer(tokenizer);
+    safelyDeletePointer(lexer);
     return 0;
 }

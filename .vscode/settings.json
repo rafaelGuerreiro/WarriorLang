@@ -59,6 +59,8 @@
         "iterator": "cpp",
         "ratio": "cpp",
         "__string": "cpp",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "__functional_03": "cpp",
+        "ios": "cpp"
     }
 }

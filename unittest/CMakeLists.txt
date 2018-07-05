@@ -21,7 +21,7 @@ add_subdirectory(${CMAKE_BINARY_DIR}/googletest-src
 
 # Now simply link against gtest or gtest_main as needed. Eg
 add_executable(${WARRIORLANG_UNITTEST_TARGET}
-    "Frontend/TokenizerTest.cpp")
+    "Parser/LexerTest.cpp")
 
 # target_compile_features(${WARRIORLANG_UNITTEST_TARGET} PRIVATE cxx_auto_type)
 set_target_properties(${WARRIORLANG_UNITTEST_TARGET} PROPERTIES

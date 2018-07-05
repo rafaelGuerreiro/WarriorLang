@@ -1,12 +1,12 @@
 //
-//  Tokenizer.hpp
+//  Lexer.hpp
 //  WarriorLang
 //
 //  Created by Rafael Guerreiro on 2018-06-29.
 //
 
-#ifndef Tokenizer_hpp
-#define Tokenizer_hpp
+#ifndef Lexer_hpp
+#define Lexer_hpp
 
 #include <string>
 #include <vector>
@@ -26,11 +26,19 @@ namespace warriorlang {
         TOKEN_DECLARATION_EXTENSION, // extension
         TOKEN_DECLARATION_OPERATOR, // operator
 
+        TOKEN_DECLARATION_OPERATOR_PRECEDENCE, // precedence
+        TOKEN_DECLARATION_OPERATOR_HIGHER, // higher
+        TOKEN_DECLARATION_OPERATOR_LOWER, // lower
+        TOKEN_DECLARATION_OPERATOR_BINARY, // binary
+        TOKEN_DECLARATION_OPERATOR_LEFT, // left
+        TOKEN_DECLARATION_OPERATOR_RIGHT, // right
+
         TOKEN_DECLARATION_VAR, // var
         TOKEN_DECLARATION_LET, // let
         TOKEN_DECLARATION_GET, // get
         TOKEN_DECLARATION_SET, // set
         TOKEN_DECLARATION_FUNCTION, // function
+        TOKEN_DECLARATION_LAZY, // lazy
 
         TOKEN_DECLARATION_INIT, // init           // Init methods can't read from self. Developers should use postconstruct methods.
         // TOKEN_DECLARATION_INIT_OPTIONAL, // init?          // Init method that can return null.
@@ -159,8 +167,8 @@ namespace warriorlang {
         TOKEN_UNDERSCORE, // _      Used to ignore variables.
 
         TOKEN_COMPOSED_PUNCTUATION_ARROW, // ->
-        TOKEN_COMPOSED_PUNCTUATION_INTERPOLATION_START, // ${
-        TOKEN_COMPOSED_PUNCTUATION_INTERPOLATION_END, // }
+        // TOKEN_COMPOSED_PUNCTUATION_INTERPOLATION_START, // ${
+        // TOKEN_COMPOSED_PUNCTUATION_INTERPOLATION_END, // }
 
         TOKEN_PUNCTUATION_LEFT_PARENTHESIS, // (
         TOKEN_PUNCTUATION_RIGHT_PARENTHESIS, // )
@@ -193,7 +201,7 @@ namespace warriorlang {
         TOKEN_IDENTIFIER, // [a-zA-Z_$][a-zA-Z0-9_$]*
     };
 
-    enum TokenizerState {
+    enum LexerState {
         TOKENIZER_STATE_START,
         TOKENIZER_STATE_SYMBOL,
         TOKENIZER_STATE_NUMBER_LITERAL,
@@ -203,53 +211,50 @@ namespace warriorlang {
         TOKENIZER_STATE_SLASH,
         TOKENIZER_STATE_STRING_LITERAL,
         TOKENIZER_STATE_STRING_LITERAL_ESCAPE,
+        TOKENIZER_STATE_STRING_LITERAL_INTERPOLATION,
         TOKENIZER_STATE_CHARACTER_LITERAL,
+        TOKENIZER_STATE_CHARACTER_LITERAL_ESCAPE,
 
         TOKENIZER_STATE_INLINE_COMMENT,
         TOKENIZER_STATE_BLOCK_COMMENT
 
-        // TokenizeStateSymbol,
-        // TokenizeStateZero, // "0", which might lead to "0x"
-        // TokenizeStateNumber, // "123", "0x123"
-        // TokenizeStateNumberDot,
-        // TokenizeStateFloatFraction, // "123.456", "0x123.456"
-        // TokenizeStateFloatExponentUnsigned, // "123.456e", "123e", "0x123p"
-        // TokenizeStateFloatExponentNumber, // "123.456e-", "123.456e5", "123.456e5e-5"
-        // TokenizeStateString,
-        // TokenizeStateStringEscape,
-        // TokenizeStateCharLiteral,
-        // TokenizeStateCharLiteralEnd,
-        // TokenizeStateSawStar,
-        // TokenizeStateSawSlash,
-        // TokenizeStateSawBackslash,
-        // TokenizeStateSawPercent,
-        // TokenizeStateSawPlus,
-        // TokenizeStateSawDash,
-        // TokenizeStateSawAmpersand,
-        // TokenizeStateSawXor,
-        // TokenizeStateSawPipe,
-        // TokenizeStateLineComment,
-        // TokenizeStateLineString,
-        // TokenizeStateLineStringEnd,
-        // TokenizeStateLineStringContinue,
-        // TokenizeStateLineStringContinueC,
-        // TokenizeStateSawEq,
-        // TokenizeStateSawBang,
-        // TokenizeStateSawLessThan,
-        // TokenizeStateSawLessThanLessThan,
-        // TokenizeStateSawGreaterThan,
-        // TokenizeStateSawGreaterThanGreaterThan,
-        // TokenizeStateSawDot,
-        // TokenizeStateSawAtSign,
-        // TokenizeStateCharCode,
-        // TokenizeStateError,
-        // TokenizeStateLBracket,
-        // TokenizeStateLBracketStar,
-    };
-
-    struct NumericTokenMetadata {
-        int radix; // 2, 8, 10, 16
-        bool floatingPoint; // [digit]\.[digit]
+        // LexerStateSymbol,
+        // LexerStateZero, // "0", which might lead to "0x"
+        // LexerStateNumber, // "123", "0x123"
+        // LexerStateNumberDot,
+        // LexerStateFloatFraction, // "123.456", "0x123.456"
+        // LexerStateFloatExponentUnsigned, // "123.456e", "123e", "0x123p"
+        // LexerStateFloatExponentNumber, // "123.456e-", "123.456e5", "123.456e5e-5"
+        // LexerStateString,
+        // LexerStateStringEscape,
+        // LexerStateCharLiteral,
+        // LexerStateCharLiteralEnd,
+        // LexerStateSawStar,
+        // LexerStateSawSlash,
+        // LexerStateSawBackslash,
+        // LexerStateSawPercent,
+        // LexerStateSawPlus,
+        // LexerStateSawDash,
+        // LexerStateSawAmpersand,
+        // LexerStateSawXor,
+        // LexerStateSawPipe,
+        // LexerStateLineComment,
+        // LexerStateLineString,
+        // LexerStateLineStringEnd,
+        // LexerStateLineStringContinue,
+        // LexerStateLineStringContinueC,
+        // LexerStateSawEq,
+        // LexerStateSawBang,
+        // LexerStateSawLessThan,
+        // LexerStateSawLessThanLessThan,
+        // LexerStateSawGreaterThan,
+        // LexerStateSawGreaterThanGreaterThan,
+        // LexerStateSawDot,
+        // LexerStateSawAtSign,
+        // LexerStateCharCode,
+        // LexerStateError,
+        // LexerStateLBracket,
+        // LexerStateLBracketStar,
     };
 
     struct Token {
@@ -261,9 +266,10 @@ namespace warriorlang {
         long int startLine;
         long int startColumn;
 
-        union {
-            NumericTokenMetadata numericTokenMetadata;
-        };
+        int numberRadix; // 2, 8, 10, 16
+        bool numberFloatingPoint; // [digit]\.[digit]
+
+        bool stringHasInterpolation; // \(expression)
     };
 
     struct Keyword {
@@ -271,10 +277,10 @@ namespace warriorlang {
         TokenCategory category;
     };
 
-    class Tokenizer {
+    class Lexer {
         private:
             std::string file;
-            TokenizerState state;
+            LexerState state;
             char currentCharacter;
             long int currentIndex;
             long int currentLine;
@@ -288,44 +294,47 @@ namespace warriorlang {
             long int tokenStartLine;
             long int tokenStartColumn;
             std::string currentSelection;
-
-            NumericTokenMetadata numericTokenMetadata;
+            int numberRadix;
+            bool numberFloatingPoint;
+            bool stringHasInterpolation;
 
             void logError(const std::string &message);
 
             void tokenStart();
-            void tokenStart(const TokenizerState &state);
+            void tokenStart(const LexerState &state);
             void tokenStartWithoutAddingCurrentCharacter();
-            void tokenStartWithoutAddingCurrentCharacter(const TokenizerState &state);
+            void tokenStartWithoutAddingCurrentCharacter(const LexerState &state);
             void appendToToken(const char &c);
             void appendToToken();
             void tokenEnd(const TokenCategory &category);
 
+            void appendSingleCharacterToken(const char &c, const TokenCategory &category);
             void appendSingleCharacterToken(const TokenCategory &category);
 
             bool tryToReadNextCharacter();
-            void appendSpaceTokenIfLastTokenWasNotSpaceAlready();
             void appendEndOfFileToken();
             const Token* peekToken();
 
-            void tokenizerStateStart(bool &readNextCharacter);
-            void tokenizerStateSymbol(bool &readNextCharacter);
-            void tokenizerStateZero(bool &readNextCharacter);
-            void tokenizerStateNumber(bool &readNextCharacter);
-            void tokenizerStateCompilerDirective(bool &readNextCharacter);
-            void tokenizerStateDash(bool &readNextCharacter);
-            void tokenizerStateSlash(bool &readNextCharacter);
-            void tokenizerStateStringLiteral(bool &readNextCharacter);
-            void tokenizerStateStringLiteralEscape(bool &readNextCharacter);
-            void tokenizerStateCharacterLiteral(bool &readNextCharacter);
-            void tokenizerStateInlineComment(bool &readNextCharacter);
-            void tokenizerStateBlockComment(bool &readNextCharacter);
+            void lexerStateStart(bool &readNextCharacter);
+            void lexerStateSymbol(bool &readNextCharacter);
+            void lexerStateZero(bool &readNextCharacter);
+            void lexerEndNumberToken(bool &readNextCharacter);
+            void lexerStateNumber(bool &readNextCharacter);
+            void lexerStateCompilerDirective(bool &readNextCharacter);
+            void lexerStateDash(bool &readNextCharacter);
+            void lexerStateSlash(bool &readNextCharacter);
+            void lexerStateStringLiteral(bool &readNextCharacter);
+            void lexerStateStringLiteralEscape(bool &readNextCharacter);
+            void lexerStateCharacterLiteral(bool &readNextCharacter);
+            void lexerStateCharacterLiteralEscape(bool &readNextCharacter);
+            void lexerStateInlineComment(bool &readNextCharacter);
+            void lexerStateBlockComment(bool &readNextCharacter);
         public:
-            Tokenizer(const std::string &file);
-            ~Tokenizer();
+            Lexer(const std::string &file);
+            ~Lexer();
 
-            void tokenize();
+            void parse();
             const std::vector<Token> getTokens();
     };
 }
-#endif /* Tokenizer_hpp */
+#endif /* Lexer_hpp */
