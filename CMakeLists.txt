@@ -72,6 +72,7 @@ endif()
 add_library(${WARRIORLANG_LIBRARIES_TARGET}
     "${CMAKE_SOURCE_DIR}/lib/utils.cpp"
     "${CMAKE_SOURCE_DIR}/lib/Parser/Lexer.cpp"
+    "${CMAKE_SOURCE_DIR}/lib/Parser/Parser.cpp"
     "${CMAKE_SOURCE_DIR}/lib/AST/StringLiteralAST.cpp"
     "${CMAKE_SOURCE_DIR}/lib/AST/FunctionMetadataAST.cpp"
     "${CMAKE_SOURCE_DIR}/lib/AST/UInt16LiteralAST.cpp"

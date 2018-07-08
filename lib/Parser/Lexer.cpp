@@ -19,12 +19,16 @@ namespace warriorlang {
         { "module",         TOKEN_DECLARATION_MODULE },
         { "extension",      TOKEN_DECLARATION_EXTENSION },
         { "operator",       TOKEN_DECLARATION_OPERATOR },
-        { "precedence",     TOKEN_DECLARATION_OPERATOR_PRECEDENCE },
-        { "higher",         TOKEN_DECLARATION_OPERATOR_HIGHER },
-        { "lower",          TOKEN_DECLARATION_OPERATOR_LOWER },
-        { "binary",         TOKEN_DECLARATION_OPERATOR_BINARY },
-        { "left",           TOKEN_DECLARATION_OPERATOR_LEFT },
-        { "right",          TOKEN_DECLARATION_OPERATOR_RIGHT },
+        { "precedencegroup",TOKEN_DECLARATION_OPERATOR_PRECEDENCE_GROUP },
+        { "higherThan",     TOKEN_DECLARATION_OPERATOR_HIGHER_THAN },
+        { "lowerThan",      TOKEN_DECLARATION_OPERATOR_LOWER_THAN },
+        { "infix",          TOKEN_DECLARATION_OPERATOR_INFIX },
+        { "prefix",         TOKEN_DECLARATION_OPERATOR_PREFIX },
+        { "postfix",        TOKEN_DECLARATION_OPERATOR_POSTFIX },
+        { "associativity",  TOKEN_DECLARATION_OPERATOR_ASSOCIATIVITTY },
+        { "left",           TOKEN_DECLARATION_OPERATOR_ASSOCIATIVITTY_LEFT },
+        { "right",          TOKEN_DECLARATION_OPERATOR_ASSOCIATIVITTY_RIGHT },
+        { "none",           TOKEN_DECLARATION_OPERATOR_ASSOCIATIVITTY_NONE },
         { "var",            TOKEN_DECLARATION_VAR },
         { "let",            TOKEN_DECLARATION_LET },
         { "get",            TOKEN_DECLARATION_GET },
@@ -153,11 +157,11 @@ namespace warriorlang {
 
     Lexer::Lexer(const std::string &file) {
         this->file = file;
-        this->state = TOKENIZER_STATE_START;
+        this->states = std::vector<LexerState> { TOKENIZER_STATE_START };
         this->currentCharacter = '\0';
         this->currentIndex = 0;
         this->currentLine = 1;
-        this->currentColumn = 0;
+        this->currentColumn = 1;
 
         this->tokens = new std::vector<Token>();
         this->inputFileStream = new std::ifstream();
@@ -184,6 +188,27 @@ namespace warriorlang {
         }
     }
 
+    void Lexer::enterState(const LexerState &state) {
+        states.push_back(state);
+    }
+
+    void Lexer::switchState(const LexerState &state) {
+        this->leaveState();
+        this->enterState(state);
+    }
+
+    const LexerState* Lexer::getState() {
+        if (states.empty())
+            return nullptr;
+
+        return &(states[states.size() - 1]);
+    }
+
+    void Lexer::leaveState() {
+        if (!states.empty())
+            states.pop_back();
+    }
+
     void Lexer::logError(const std::string &message) {
         std::cout << this->file
                   << ':'
@@ -199,14 +224,10 @@ namespace warriorlang {
         return *this->tokens;
     }
 
-    void Lexer::tokenStart() {
+    void Lexer::tokenStart(const LexerState &state) {
         this->tokenStartWithoutAddingCurrentCharacter();
         this->currentSelection = std::string(1, this->currentCharacter);
-    }
-
-    void Lexer::tokenStart(const LexerState &state) {
-        this->tokenStart();
-        this->state = state;
+        this->enterState(state);
     }
 
     void Lexer::tokenStartWithoutAddingCurrentCharacter() {
@@ -222,7 +243,7 @@ namespace warriorlang {
 
     void Lexer::tokenStartWithoutAddingCurrentCharacter(const LexerState &state) {
         this->tokenStartWithoutAddingCurrentCharacter();
-        this->state = state;
+        this->enterState(state);
     }
 
     void Lexer::appendToToken(const char &c) {
@@ -235,7 +256,7 @@ namespace warriorlang {
     }
 
     void Lexer::tokenEnd(const TokenCategory &category) {
-        this->state = TOKENIZER_STATE_START;
+        this->leaveState();
 
         int radix = this->numberRadix;
         bool floatingPoint = this->numberFloatingPoint;
@@ -269,7 +290,7 @@ namespace warriorlang {
     }
 
     void Lexer::appendSingleCharacterToken(const TokenCategory &category) {
-        this->tokenStart();
+        this->tokenStart(TOKENIZER_STATE_SYMBOL);
         this->tokenEnd(category);
     }
 
@@ -327,6 +348,8 @@ namespace warriorlang {
             this->tokenStart(TOKENIZER_STATE_DASH);
         else if (this->currentCharacter == '#')
             this->tokenStart(TOKENIZER_STATE_COMPILER_DIRECTIVE);
+        else if (this->currentCharacter == '`')
+            this->tokenStartWithoutAddingCurrentCharacter(TOKENIZER_STATE_IDENTIFIER);
 
         // Single char tokens
         else if (this->currentCharacter == '{')
@@ -365,8 +388,6 @@ namespace warriorlang {
             this->appendSingleCharacterToken(TOKEN_PUNCTUATION_PERCENT);
         else if (this->currentCharacter == '~')
             this->appendSingleCharacterToken(TOKEN_PUNCTUATION_TILDE);
-        else if (this->currentCharacter == '`')
-            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_BACKTICK);
         else if (this->currentCharacter == '=')
             this->appendSingleCharacterToken(TOKEN_PUNCTUATION_EQUAL);
         else if (this->currentCharacter == '@')
@@ -401,6 +422,23 @@ namespace warriorlang {
             else
                 this->tokenEnd(*category);
             readNextCharacter = false;
+        }
+    }
+
+    void Lexer::lexerStateIdentifier(bool &readNextCharacter) {
+        // First char is `.
+        readNextCharacter = true;
+        if (isalpha(this->currentCharacter) ||
+                this->currentCharacter == '_' ||
+                this->currentCharacter == '$')
+            this->appendToToken();
+        else if (this->currentSelection.size() > 0 &&
+                isdigit(this->currentCharacter))
+            this->appendToToken();
+        else if (this->currentCharacter == '`')
+            this->tokenEnd(TOKEN_IDENTIFIER);
+        else {
+            logError("Invalid token");
         }
     }
 
@@ -447,7 +485,7 @@ namespace warriorlang {
         else if (isExponentialIdentifier(this->numberRadix, this->currentCharacter)) {
             this->appendToToken();
             this->numberFloatingPoint = true;
-            this->state = TOKENIZER_STATE_NUMBER_LITERAL_EXPONENTIAL;
+            this->enterState(TOKENIZER_STATE_NUMBER_LITERAL_EXPONENTIAL);
         } else {
             this->lexerEndNumberToken(readNextCharacter);
         }
@@ -460,7 +498,7 @@ namespace warriorlang {
                 this->currentCharacter == '+' ||
                 this->currentCharacter == '-') {
             this->appendToToken();
-            this->state = TOKENIZER_STATE_NUMBER_LITERAL;
+            this->leaveState();
         } else {
             this->lexerEndNumberToken(readNextCharacter);
         }
@@ -469,7 +507,7 @@ namespace warriorlang {
     void Lexer::lexerStateZero(bool &readNextCharacter) {
         // First char is 0.
         readNextCharacter = true;
-        this->state = TOKENIZER_STATE_NUMBER_LITERAL;
+        this->switchState(TOKENIZER_STATE_NUMBER_LITERAL);
 
         if(this->currentCharacter == 'x') {
             this->numberRadix = 16;
@@ -533,10 +571,10 @@ namespace warriorlang {
         // This could be an inline comment, a block comment or a slash.
         readNextCharacter = true;
         if (this->currentCharacter == '/') {
-            this->state = TOKENIZER_STATE_INLINE_COMMENT;
+            this->switchState(TOKENIZER_STATE_INLINE_COMMENT);
             this->appendToToken();
         } else if (this->currentCharacter == '*') {
-            this->state = TOKENIZER_STATE_BLOCK_COMMENT;
+            this->switchState(TOKENIZER_STATE_BLOCK_COMMENT);
             this->appendToToken();
         } else {
             this->tokenEnd(TOKEN_PUNCTUATION_SLASH);
@@ -547,7 +585,7 @@ namespace warriorlang {
     void Lexer::lexerStateStringLiteral(bool &readNextCharacter) {
         readNextCharacter = true;
         if (this->currentCharacter == '\\') {
-            this->state = TOKENIZER_STATE_STRING_LITERAL_ESCAPE;
+            this->enterState(TOKENIZER_STATE_STRING_LITERAL_ESCAPE);
         } else if (this->currentCharacter == '"') {
             this->tokenEnd(TOKEN_LITERAL_STRING);
         } else {
@@ -559,7 +597,7 @@ namespace warriorlang {
         // Previous character was a \.
 
         readNextCharacter = true;
-        this->state = TOKENIZER_STATE_STRING_LITERAL;
+        this->leaveState();
         if (this->currentCharacter == '(') {
             this->stringHasInterpolation = true;
             // this->tokenEnd(TOKEN_LITERAL_STRING);
@@ -585,7 +623,7 @@ namespace warriorlang {
     void Lexer::lexerStateCharacterLiteral(bool &readNextCharacter) {
         readNextCharacter = true;
         if (this->currentCharacter == '\\') {
-            this->state = TOKENIZER_STATE_CHARACTER_LITERAL_ESCAPE;
+            this->enterState(TOKENIZER_STATE_CHARACTER_LITERAL_ESCAPE);
         } else if (this->currentCharacter == '\'') {
             this->tokenEnd(TOKEN_LITERAL_CHARACTER);
         } else {
@@ -597,7 +635,7 @@ namespace warriorlang {
         // Previous character was a \.
 
         readNextCharacter = true;
-        this->state = TOKENIZER_STATE_CHARACTER_LITERAL;
+        this->leaveState();
         if (this->currentCharacter == 'n') this->appendToToken('\n');
         else if (this->currentCharacter == '"') this->appendToToken('"');
         else if (this->currentCharacter == '\'') this->appendToToken('\'');
@@ -639,71 +677,80 @@ namespace warriorlang {
         }
     }
 
+    void Lexer::parseState(const LexerState& state, bool &readNextCharacter) {
+        switch (state) {
+            case TOKENIZER_STATE_START:
+                this->lexerStateStart(readNextCharacter);
+                break;
+            case TOKENIZER_STATE_SYMBOL:
+                this->lexerStateSymbol(readNextCharacter);
+                break;
+            case TOKENIZER_STATE_IDENTIFIER:
+                this->lexerStateIdentifier(readNextCharacter);
+                break;
+            case TOKENIZER_STATE_NUMBER_LITERAL_ZERO:
+                this->lexerStateZero(readNextCharacter);
+                break;
+            case TOKENIZER_STATE_NUMBER_LITERAL:
+                this->lexerStateNumber(readNextCharacter);
+                break;
+            case TOKENIZER_STATE_NUMBER_LITERAL_EXPONENTIAL:
+                this->lexerStateNumberExponential(readNextCharacter);
+                break;
+            case TOKENIZER_STATE_COMPILER_DIRECTIVE:
+                this->lexerStateCompilerDirective(readNextCharacter);
+                break;
+            case TOKENIZER_STATE_SLASH:
+                this->lexerStateSlash(readNextCharacter);
+                break;
+            case TOKENIZER_STATE_INLINE_COMMENT:
+                this->lexerStateInlineComment(readNextCharacter);
+                break;
+            case TOKENIZER_STATE_BLOCK_COMMENT:
+                this->lexerStateBlockComment(readNextCharacter);
+                break;
+            case TOKENIZER_STATE_DASH:
+                this->lexerStateDash(readNextCharacter);
+                break;
+            case TOKENIZER_STATE_STRING_LITERAL:
+                this->lexerStateStringLiteral(readNextCharacter);
+                break;
+            case TOKENIZER_STATE_STRING_LITERAL_ESCAPE:
+                this->lexerStateStringLiteralEscape(readNextCharacter);
+                break;
+            case TOKENIZER_STATE_CHARACTER_LITERAL:
+                this->lexerStateCharacterLiteral(readNextCharacter);
+                break;
+            case TOKENIZER_STATE_CHARACTER_LITERAL_ESCAPE:
+                this->lexerStateCharacterLiteralEscape(readNextCharacter);
+                break;
+            default:
+                readNextCharacter = true;
+                break;
+        }
+    }
+
     void Lexer::parse() {
         this->inputFileStream->open(file, std::ifstream::in);
 
         bool readNextCharacter = true;
         for (this->currentIndex = 0; true; this->currentIndex++) {
-            // std::cout << "FOUND CHAR: " << currentCharacter << '\n';
-
             if (readNextCharacter) {
                 bool read = this->tryToReadNextCharacter();
                 if (!read) break;
             }
 
             if (this->currentCharacter == '\n') {
-                this->currentColumn = 0;
+                this->currentColumn = 1;
                 this->currentLine++;
             } else
                 this->currentColumn++;
 
-            switch (this->state) {
-                case TOKENIZER_STATE_START:
-                    this->lexerStateStart(readNextCharacter);
-                    break;
-                case TOKENIZER_STATE_SYMBOL:
-                    this->lexerStateSymbol(readNextCharacter);
-                    break;
-                case TOKENIZER_STATE_NUMBER_LITERAL_ZERO:
-                    this->lexerStateZero(readNextCharacter);
-                    break;
-                case TOKENIZER_STATE_NUMBER_LITERAL:
-                    this->lexerStateNumber(readNextCharacter);
-                    break;
-                case TOKENIZER_STATE_NUMBER_LITERAL_EXPONENTIAL:
-                    this->lexerStateNumberExponential(readNextCharacter);
-                    break;
-                case TOKENIZER_STATE_COMPILER_DIRECTIVE:
-                    this->lexerStateCompilerDirective(readNextCharacter);
-                    break;
-                case TOKENIZER_STATE_SLASH:
-                    this->lexerStateSlash(readNextCharacter);
-                    break;
-                case TOKENIZER_STATE_INLINE_COMMENT:
-                    this->lexerStateInlineComment(readNextCharacter);
-                    break;
-                case TOKENIZER_STATE_BLOCK_COMMENT:
-                    this->lexerStateBlockComment(readNextCharacter);
-                    break;
-                case TOKENIZER_STATE_DASH:
-                    this->lexerStateDash(readNextCharacter);
-                    break;
-                case TOKENIZER_STATE_STRING_LITERAL:
-                    this->lexerStateStringLiteral(readNextCharacter);
-                    break;
-                case TOKENIZER_STATE_STRING_LITERAL_ESCAPE:
-                    this->lexerStateStringLiteralEscape(readNextCharacter);
-                    break;
-                case TOKENIZER_STATE_CHARACTER_LITERAL:
-                    this->lexerStateCharacterLiteral(readNextCharacter);
-                    break;
-                case TOKENIZER_STATE_CHARACTER_LITERAL_ESCAPE:
-                    this->lexerStateCharacterLiteralEscape(readNextCharacter);
-                    break;
-                default:
-                    readNextCharacter = true;
-                    break;
-            }
+            const LexerState* state = this->getState();
+            if (state == nullptr)
+                break;
+
+            this->parseState(*state, readNextCharacter);
         }
 
         this->appendEndOfFileToken();

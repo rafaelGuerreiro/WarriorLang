@@ -17,7 +17,7 @@
 
 namespace warriorlang {
     enum TypeMetadataType {
-        CLASS = 1, INTERFACE, ENUM, ANNOTATION //, OPERATOR, STRUCT
+        CLASS, INTERFACE, ENUM, ANNOTATION, OPERATOR, MODULE, EXTENSION
     };
 
     /**
