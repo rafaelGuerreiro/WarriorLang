@@ -14,7 +14,7 @@
 #include <fstream>
 
 namespace warriorlang {
-    enum LexerState {
+    enum LexerStateType {
         TOKENIZER_STATE_START,
         TOKENIZER_STATE_SYMBOL,
         TOKENIZER_STATE_IDENTIFIER,
@@ -29,47 +29,13 @@ namespace warriorlang {
         TOKENIZER_STATE_STRING_LITERAL_INTERPOLATION,
         TOKENIZER_STATE_CHARACTER_LITERAL,
         TOKENIZER_STATE_CHARACTER_LITERAL_ESCAPE,
-
         TOKENIZER_STATE_INLINE_COMMENT,
-        TOKENIZER_STATE_BLOCK_COMMENT
+        TOKENIZER_STATE_BLOCK_COMMENT,
+        TOKENIZER_STATE_OPEN_PARENTHESIS
+    };
 
-        // LexerStateSymbol,
-        // LexerStateZero, // "0", which might lead to "0x"
-        // LexerStateNumber, // "123", "0x123"
-        // LexerStateNumberDot,
-        // LexerStateFloatFraction, // "123.456", "0x123.456"
-        // LexerStateFloatExponentUnsigned, // "123.456e", "123e", "0x123p"
-        // LexerStateFloatExponentNumber, // "123.456e-", "123.456e5", "123.456e5e-5"
-        // LexerStateString,
-        // LexerStateStringEscape,
-        // LexerStateCharLiteral,
-        // LexerStateCharLiteralEnd,
-        // LexerStateSawStar,
-        // LexerStateSawSlash,
-        // LexerStateSawBackslash,
-        // LexerStateSawPercent,
-        // LexerStateSawPlus,
-        // LexerStateSawDash,
-        // LexerStateSawAmpersand,
-        // LexerStateSawXor,
-        // LexerStateSawPipe,
-        // LexerStateLineComment,
-        // LexerStateLineString,
-        // LexerStateLineStringEnd,
-        // LexerStateLineStringContinue,
-        // LexerStateLineStringContinueC,
-        // LexerStateSawEq,
-        // LexerStateSawBang,
-        // LexerStateSawLessThan,
-        // LexerStateSawLessThanLessThan,
-        // LexerStateSawGreaterThan,
-        // LexerStateSawGreaterThanGreaterThan,
-        // LexerStateSawDot,
-        // LexerStateSawAtSign,
-        // LexerStateCharCode,
-        // LexerStateError,
-        // LexerStateLBracket,
-        // LexerStateLBracketStar,
+    struct LexerState {
+        LexerStateType type;
     };
 
     struct Token {
@@ -116,9 +82,9 @@ namespace warriorlang {
 
             void logError(const std::string &message);
 
-            void tokenStart(const LexerState &state);
+            void tokenStart(const LexerStateType &type);
             void tokenStartWithoutAddingCurrentCharacter();
-            void tokenStartWithoutAddingCurrentCharacter(const LexerState &state);
+            void tokenStartWithoutAddingCurrentCharacter(const LexerStateType &type);
             void appendToToken(const char &c);
             void appendToToken();
             void tokenEnd(const TokenCategory &category);
@@ -130,9 +96,9 @@ namespace warriorlang {
             void appendEndOfFileToken();
             const Token* peekToken();
 
-            void enterState(const LexerState &state);
-            void switchState(const LexerState &state);
-            const LexerState* getState();
+            void enterState(const LexerStateType &type);
+            void switchState(const LexerStateType &type);
+            LexerState* getState();
             void leaveState();
 
             void lexerStateStart(bool &readNextCharacter);

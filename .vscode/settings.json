@@ -61,6 +61,9 @@
         "__string": "cpp",
         "string_view": "cpp",
         "__functional_03": "cpp",
-        "ios": "cpp"
+        "ios": "cpp",
+        "__functional_base_03": "cpp",
+        "__tree": "cpp",
+        "__tuple": "cpp"
     }
 }

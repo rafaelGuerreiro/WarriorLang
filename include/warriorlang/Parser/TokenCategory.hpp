@@ -22,7 +22,6 @@ namespace warriorlang {
         TOKEN_DECLARATION_EXTENSION, // extension
         TOKEN_DECLARATION_OPERATOR, // operator
 
-        TOKEN_DECLARATION_OPERATOR_PRECEDENCE_GROUP, // precedencegroup
         TOKEN_DECLARATION_OPERATOR_HIGHER_THAN, // higherThan
         TOKEN_DECLARATION_OPERATOR_LOWER_THAN, // lowerThan
         TOKEN_DECLARATION_OPERATOR_INFIX, // infix
@@ -142,6 +141,7 @@ namespace warriorlang {
              "regular string, value: ${1 + 2 / 4 * 7}"
          */
         TOKEN_LITERAL_STRING,
+        TOKEN_LITERAL_STRING_INTERPOLATION,
 
         /*
           Characters are single quoted and single value.

@@ -19,7 +19,6 @@ namespace warriorlang {
         { "module",         TOKEN_DECLARATION_MODULE },
         { "extension",      TOKEN_DECLARATION_EXTENSION },
         { "operator",       TOKEN_DECLARATION_OPERATOR },
-        { "precedencegroup",TOKEN_DECLARATION_OPERATOR_PRECEDENCE_GROUP },
         { "higherThan",     TOKEN_DECLARATION_OPERATOR_HIGHER_THAN },
         { "lowerThan",      TOKEN_DECLARATION_OPERATOR_LOWER_THAN },
         { "infix",          TOKEN_DECLARATION_OPERATOR_INFIX },
@@ -99,6 +98,29 @@ namespace warriorlang {
         { "#warning",       TOKEN_COMPILE_DIRECTIVE_WARNING }
     };
 
+    static std::string nameOf(const LexerState &state) {
+        switch(state.type) {
+        case TOKENIZER_STATE_START: return "TOKENIZER_STATE_START";
+        case TOKENIZER_STATE_SYMBOL: return "TOKENIZER_STATE_SYMBOL";
+        case TOKENIZER_STATE_IDENTIFIER: return "TOKENIZER_STATE_IDENTIFIER";
+        case TOKENIZER_STATE_NUMBER_LITERAL: return "TOKENIZER_STATE_NUMBER_LITERAL";
+        case TOKENIZER_STATE_NUMBER_LITERAL_ZERO: return "TOKENIZER_STATE_NUMBER_LITERAL_ZERO";
+        case TOKENIZER_STATE_NUMBER_LITERAL_EXPONENTIAL: return "TOKENIZER_STATE_NUMBER_LITERAL_EXPONENTIAL";
+        case TOKENIZER_STATE_COMPILER_DIRECTIVE: return "TOKENIZER_STATE_COMPILER_DIRECTIVE";
+        case TOKENIZER_STATE_DASH: return "TOKENIZER_STATE_DASH";
+        case TOKENIZER_STATE_SLASH: return "TOKENIZER_STATE_SLASH";
+        case TOKENIZER_STATE_STRING_LITERAL: return "TOKENIZER_STATE_STRING_LITERAL";
+        case TOKENIZER_STATE_STRING_LITERAL_ESCAPE: return "TOKENIZER_STATE_STRING_LITERAL_ESCAPE";
+        case TOKENIZER_STATE_STRING_LITERAL_INTERPOLATION: return "TOKENIZER_STATE_STRING_LITERAL_INTERPOLATION";
+        case TOKENIZER_STATE_CHARACTER_LITERAL: return "TOKENIZER_STATE_CHARACTER_LITERAL";
+        case TOKENIZER_STATE_CHARACTER_LITERAL_ESCAPE: return "TOKENIZER_STATE_CHARACTER_LITERAL_ESCAPE";
+        case TOKENIZER_STATE_INLINE_COMMENT: return "TOKENIZER_STATE_INLINE_COMMENT";
+        case TOKENIZER_STATE_BLOCK_COMMENT: return "TOKENIZER_STATE_BLOCK_COMMENT";
+        case TOKENIZER_STATE_OPEN_PARENTHESIS: return "TOKENIZER_STATE_OPEN_PARENTHESIS";
+        }
+        return "(unknown state)";
+    }
+
     static const TokenCategory* getCategory(const std::string &word, const std::vector<Keyword> &list) {
         for (unsigned long int index = 0; index < list.size(); index++)
             if (word == list[index].keyword)
@@ -157,7 +179,13 @@ namespace warriorlang {
 
     Lexer::Lexer(const std::string &file) {
         this->file = file;
-        this->states = std::vector<LexerState> { TOKENIZER_STATE_START };
+
+        this->states = std::vector<LexerState> {
+            LexerState {
+            /* type: */ TOKENIZER_STATE_START
+            }
+        };
+
         this->currentCharacter = '\0';
         this->currentIndex = 0;
         this->currentLine = 1;
@@ -188,16 +216,26 @@ namespace warriorlang {
         }
     }
 
-    void Lexer::enterState(const LexerState &state) {
-        states.push_back(state);
+    static void printStates(const std::string &text, const std::vector<LexerState> &states) {
+        std::cout << text << "[ ";
+        for (auto state : states)
+            std::cout << nameOf(state) << ' ';
+        std::cout << "]\n";
     }
 
-    void Lexer::switchState(const LexerState &state) {
+    void Lexer::enterState(const LexerStateType &type) {
+        states.push_back(LexerState {
+            /*type: */type
+        });
+        printStates("Enter state: ", this->states);
+    }
+
+    void Lexer::switchState(const LexerStateType &type) {
         this->leaveState();
-        this->enterState(state);
+        this->enterState(type);
     }
 
-    const LexerState* Lexer::getState() {
+    LexerState* Lexer::getState() {
         if (states.empty())
             return nullptr;
 
@@ -207,6 +245,8 @@ namespace warriorlang {
     void Lexer::leaveState() {
         if (!states.empty())
             states.pop_back();
+
+        printStates("Leave state: ", this->states);
     }
 
     void Lexer::logError(const std::string &message) {
@@ -224,10 +264,10 @@ namespace warriorlang {
         return *this->tokens;
     }
 
-    void Lexer::tokenStart(const LexerState &state) {
+    void Lexer::tokenStart(const LexerStateType &type) {
         this->tokenStartWithoutAddingCurrentCharacter();
         this->currentSelection = std::string(1, this->currentCharacter);
-        this->enterState(state);
+        this->enterState(type);
     }
 
     void Lexer::tokenStartWithoutAddingCurrentCharacter() {
@@ -241,9 +281,9 @@ namespace warriorlang {
         this->stringHasInterpolation = false;
     }
 
-    void Lexer::tokenStartWithoutAddingCurrentCharacter(const LexerState &state) {
+    void Lexer::tokenStartWithoutAddingCurrentCharacter(const LexerStateType &type) {
         this->tokenStartWithoutAddingCurrentCharacter();
-        this->enterState(state);
+        this->enterState(type);
     }
 
     void Lexer::appendToToken(const char &c) {
@@ -265,9 +305,9 @@ namespace warriorlang {
             floatingPoint = false;
         }
 
-        bool stringHasInterpolation = this->stringHasInterpolation;
-        if (category != TOKEN_LITERAL_STRING)
-            stringHasInterpolation = false;
+        // bool stringHasInterpolation = this->stringHasInterpolation;
+        // if (category != TOKEN_LITERAL_STRING)
+        //     stringHasInterpolation = false;
 
         this->tokens->push_back(Token {
             /* category: */                 category,
@@ -279,8 +319,13 @@ namespace warriorlang {
             /* startColumn: */              this->tokenStartColumn,
             /* numberRadix: */              radix,
             /* numberFloatingPoint: */      floatingPoint,
-            /* stringHasInterpolation: */   stringHasInterpolation
+            /* stringHasInterpolation: */   false
         });
+
+        this->currentSelection = "";
+        this->numberRadix = 0;
+        this->numberFloatingPoint = false;
+        this->stringHasInterpolation = false;
     }
 
     void Lexer::appendSingleCharacterToken(const char &c, const TokenCategory &category) {
@@ -350,16 +395,22 @@ namespace warriorlang {
             this->tokenStart(TOKENIZER_STATE_COMPILER_DIRECTIVE);
         else if (this->currentCharacter == '`')
             this->tokenStartWithoutAddingCurrentCharacter(TOKENIZER_STATE_IDENTIFIER);
+        else if (this->currentCharacter == '(') {
+            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_LEFT_PARENTHESIS);
+            this->enterState(TOKENIZER_STATE_OPEN_PARENTHESIS);
+        } else if (this->currentCharacter == ')') {
+            const LexerState *state = this->getState();
+
+            this->leaveState();
+            if (state == nullptr || state->type == TOKENIZER_STATE_OPEN_PARENTHESIS)
+                this->appendSingleCharacterToken(TOKEN_PUNCTUATION_RIGHT_PARENTHESIS);
+        }
 
         // Single char tokens
         else if (this->currentCharacter == '{')
             this->appendSingleCharacterToken(TOKEN_PUNCTUATION_LEFT_CURLY_BRACE);
         else if (this->currentCharacter == '}')
             this->appendSingleCharacterToken(TOKEN_PUNCTUATION_RIGHT_CURLY_BRACE);
-        else if (this->currentCharacter == '(')
-            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_LEFT_PARENTHESIS);
-        else if (this->currentCharacter == ')')
-            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_RIGHT_PARENTHESIS);
         else if (this->currentCharacter == '[')
             this->appendSingleCharacterToken(TOKEN_PUNCTUATION_LEFT_SQUARE_BRACKETS);
         else if (this->currentCharacter == ']')
@@ -599,9 +650,11 @@ namespace warriorlang {
         readNextCharacter = true;
         this->leaveState();
         if (this->currentCharacter == '(') {
-            this->stringHasInterpolation = true;
-            // this->tokenEnd(TOKEN_LITERAL_STRING);
-            // this->state = TOKENIZER_STATE_STRING_LITERAL_INTERPOLATION;
+            // this->stringHasInterpolation = true;
+            // this->tokenStringInterpolationOpenParenthesis += 1;
+            this->tokenEnd(TOKEN_LITERAL_STRING);
+            this->enterState(TOKENIZER_STATE_STRING_LITERAL);
+            this->enterState(TOKENIZER_STATE_STRING_LITERAL_INTERPOLATION);
         } else if (this->currentCharacter == 'n') this->appendToToken('\n');
           else if (this->currentCharacter == '"') this->appendToToken('"');
           else if (this->currentCharacter == '\'') this->appendToToken('\'');
@@ -678,7 +731,9 @@ namespace warriorlang {
     }
 
     void Lexer::parseState(const LexerState& state, bool &readNextCharacter) {
-        switch (state) {
+        switch (state.type) {
+            case TOKENIZER_STATE_STRING_LITERAL_INTERPOLATION:
+            case TOKENIZER_STATE_OPEN_PARENTHESIS:
             case TOKENIZER_STATE_START:
                 this->lexerStateStart(readNextCharacter);
                 break;
