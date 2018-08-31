@@ -60,10 +60,11 @@ namespace warriorlang {
         TOKEN_DECLARATION_REQUIRED, // required,       // Forces sub-implementation to override this method. Implies it's also overridable. Therefore, it can't call any self mutating methods.
         TOKEN_DECLARATION_MUTATING, // mutating,       // mutating functions allows this function to modify the underlying object
 
-        TOKEN_MODIFIER_MUTABLE, // mutable,        // mutable returns allows the returned instance to be assigned to `var` and be modified.
+        // TOKEN_MODIFIER_MUTABLE, // mutable,        // mutable returns allows the returned instance to be assigned to `var` and be modified.
         TOKEN_MODIFIER_INOUT, // inout,          // Makes an argument mutable, which also reflects on the caller instance. `let` variables can't be passed to inout.
         TOKEN_MODIFIER_WHERE, // where,          // Used to refine generics in functions and extensions.
         TOKEN_MODIFIER_THROWS, // throws,
+        TOKEN_MODIFIER_RETHROWS, // rethrows,     // Used to allow both throwing / non-throwning implementation. A method can be declared with the rethrows keyword to indicate that it throws an error only if one of it’s function parameters throws an error. These functions and methods are known as rethrowing functions and rethrowing methods. Rethrowing functions and methods must have at least one throwing function parameter.
         TOKEN_MODIFIER_ASYNC, // async,
         TOKEN_MODIFIER_DEFAULT, // default,
 
@@ -167,6 +168,8 @@ namespace warriorlang {
         TOKEN_UNDERSCORE, // _      Used to ignore variables.
 
         TOKEN_COMPOSED_PUNCTUATION_ARROW, // ->
+        TOKEN_COMPOSED_CLOSED_RANGE, // ...
+        TOKEN_COMPOSED_HALF_OPEN_RANGE, // ..<
         // TOKEN_COMPOSED_PUNCTUATION_INTERPOLATION_START, // ${
         // TOKEN_COMPOSED_PUNCTUATION_INTERPOLATION_END, // }
 

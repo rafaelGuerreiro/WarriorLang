@@ -50,10 +50,11 @@ namespace warriorlang {
         { "override",       TOKEN_DECLARATION_OVERRIDE },
         { "required",       TOKEN_DECLARATION_REQUIRED },
         { "mutating",       TOKEN_DECLARATION_MUTATING },
-        { "mutable",        TOKEN_MODIFIER_MUTABLE },
+        // { "mutable",        TOKEN_MODIFIER_MUTABLE },
         { "inout",          TOKEN_MODIFIER_INOUT },
         { "where",          TOKEN_MODIFIER_WHERE },
         { "throws",         TOKEN_MODIFIER_THROWS },
+        { "rethrows",       TOKEN_MODIFIER_RETHROWS },
         { "async",          TOKEN_MODIFIER_ASYNC },
         { "default",        TOKEN_MODIFIER_DEFAULT },
         { "null",           TOKEN_EXPRESSION_NULL },
@@ -404,6 +405,8 @@ namespace warriorlang {
             this->leaveState();
             if (state == nullptr || state->type == TOKENIZER_STATE_OPEN_PARENTHESIS)
                 this->appendSingleCharacterToken(TOKEN_PUNCTUATION_RIGHT_PARENTHESIS);
+        } else if (this->currentCharacter == '.') {
+            this->tokenStart(TOKENIZER_STATE_DOT);
         }
 
         // Single char tokens
@@ -419,8 +422,6 @@ namespace warriorlang {
             this->appendSingleCharacterToken(TOKEN_PUNCTUATION_LEFT_ANGLE_BRACKETS);
         else if (this->currentCharacter == '>')
             this->appendSingleCharacterToken(TOKEN_PUNCTUATION_RIGHT_ANGLE_BRACKETS);
-        else if (this->currentCharacter == '.')
-            this->appendSingleCharacterToken(TOKEN_PUNCTUATION_DOT);
         else if (this->currentCharacter == ',')
             this->appendSingleCharacterToken(TOKEN_PUNCTUATION_COMMA);
         else if (this->currentCharacter == ':')
@@ -527,8 +528,9 @@ namespace warriorlang {
                 readNextCharacter = true;
             } else {
                 this->lexerEndNumberToken(readNextCharacter);
-                this->appendSingleCharacterToken('.', TOKEN_PUNCTUATION_DOT);
                 readNextCharacter = false;
+                this->tokenStartWithoutAddingCurrentCharacter(TOKENIZER_STATE_DOT);
+                this->appendToToken('.');
             }
         }
         else if (isValidDigit(this->numberRadix, this->currentCharacter))
@@ -601,6 +603,32 @@ namespace warriorlang {
                     this->tokenEnd(TOKEN_IDENTIFIER);
             else
                 this->tokenEnd(*category);
+            readNextCharacter = false;
+        }
+    }
+
+    void Lexer::lexerStateDot(bool &readNextCharacter) {
+        // First char is . not part of a number.
+
+        // ...
+        // ..<
+        // .method | .variable
+
+        readNextCharacter = true;
+        if (this->currentCharacter == '.' && (
+                    this->currentSelection == "."  ||
+                    this->currentSelection == ".."
+                ))
+        {
+            this->appendToToken();
+            if (this->currentSelection == "...")
+                this->tokenEnd(TOKEN_COMPOSED_CLOSED_RANGE);
+        } else if (this->currentCharacter == '<' && this->currentSelection == "..") {
+            this->appendToToken();
+            if (this->currentSelection == "..<")
+                this->tokenEnd(TOKEN_COMPOSED_HALF_OPEN_RANGE);
+        } else {
+            this->tokenEnd(TOKEN_PUNCTUATION_DOT);
             readNextCharacter = false;
         }
     }
@@ -763,6 +791,9 @@ namespace warriorlang {
                 break;
             case TOKENIZER_STATE_BLOCK_COMMENT:
                 this->lexerStateBlockComment(readNextCharacter);
+                break;
+            case TOKENIZER_STATE_DOT:
+                this->lexerStateDot(readNextCharacter);
                 break;
             case TOKENIZER_STATE_DASH:
                 this->lexerStateDash(readNextCharacter);
