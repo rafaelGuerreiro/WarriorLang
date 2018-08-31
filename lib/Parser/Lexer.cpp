@@ -374,9 +374,13 @@ namespace warriorlang {
 
     void Lexer::lexerStateStart(bool &readNextCharacter) {
         readNextCharacter = true;
-        if (isspace(this->currentCharacter))
+        if (isspace(this->currentCharacter)) {
+            const Token* lastToken = this->peekToken();
+            if (lastToken != nullptr && lastToken->category != TOKEN_SPACE)
+                this->appendSingleCharacterToken(TOKEN_SPACE);
+
             return;
-        else if (this->currentCharacter == '0')
+        } else if (this->currentCharacter == '0')
             this->tokenStart(TOKENIZER_STATE_NUMBER_LITERAL_ZERO);
         else if (isdigit(this->currentCharacter))
             this->tokenStart(TOKENIZER_STATE_NUMBER_LITERAL);
